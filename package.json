@@ -7,5 +7,6 @@
     "start": "elm-live src/Main.elm --port=3000"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {}
 }
