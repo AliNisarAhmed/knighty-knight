@@ -21,10 +21,6 @@ knightStartingPosition =
     }
 
 
-type alias LegalMoves =
-    List ( File, Rank )
-
-
 init : () -> () -> () -> ( Model, Cmd Msg )
 init _ _ _ =
     ( initModel, Cmd.none )
@@ -69,7 +65,7 @@ update msg model =
         ToggleKnightSelect file rank ->
             case model.knightSelected of
                 Nothing ->
-                    ( { model | knightSelected = Just [] }, Cmd.none )
+                    ( { model | knightSelected = Just <| getLegalMoves file rank }, Cmd.none )
 
                 Just _ ->
                     ( { model | knightSelected = Nothing }, Cmd.none )
@@ -141,11 +137,16 @@ box rank file { knight, knightSelected } =
                 div [ css [ display none ] ] []
 
         legalMove =
-            if file == G && rank == Six then
-                legalMoveCircle
+            case knightSelected of
+                Nothing ->
+                    div [ css [ display none ] ] []
 
-            else
-                div [ css [ display none ] ] []
+                Just legalMoves ->
+                    if List.member ( file, rank ) legalMoves then
+                        legalMoveCircle
+
+                    else
+                        div [ css [ display none ] ] []
     in
     div [ css [ width (px 100), height (px 100), borderWidth (px 1), borderStyle solid, boxColor ], knightStyles ]
         [ knightImg, queenImg, legalMove ]
