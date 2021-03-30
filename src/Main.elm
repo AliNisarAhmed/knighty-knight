@@ -4,37 +4,8 @@ import Browser exposing (Document)
 import Css exposing (..)
 import Html.Styled exposing (Html, div, h1, img, p, text, toUnstyled)
 import Html.Styled.Attributes exposing (css, src)
-
-
-type alias Model =
-    { knight : Knight }
-
-
-initModel : Model
-initModel =
-    { knight = knightStartingPosition }
-
-
-type File
-    = A
-    | B
-    | C
-    | D
-    | E
-    | F
-    | G
-    | H
-
-
-type Rank
-    = One
-    | Two
-    | Three
-    | Four
-    | Five
-    | Six
-    | Seven
-    | Eight
+import Html.Styled.Events exposing (onClick)
+import RankNFiles exposing (..)
 
 
 type alias Knight =
@@ -50,74 +21,8 @@ knightStartingPosition =
     }
 
 
-files : List File
-files =
-    [ A, B, C, D, E, F, G, H ]
-
-
-ranks : List Rank
-ranks =
-    [ Eight, Seven, Six, Five, Four, Three, Two, One ]
-
-
-fileToString : File -> String
-fileToString f =
-    case f of
-        A ->
-            "a"
-
-        B ->
-            "b"
-
-        C ->
-            "c"
-
-        D ->
-            "d"
-
-        E ->
-            "e"
-
-        F ->
-            "f"
-
-        G ->
-            "g"
-
-        H ->
-            "h"
-
-
-rankToInt : Rank -> Int
-rankToInt f =
-    case f of
-        One ->
-            1
-
-        Two ->
-            2
-
-        Three ->
-            3
-
-        Four ->
-            4
-
-        Five ->
-            5
-
-        Six ->
-            6
-
-        Seven ->
-            7
-
-        Eight ->
-            8
-
-
-type Msg
-    = None
+type alias LegalMoves =
+    List ( File, Rank )
 
 
 init : () -> () -> () -> ( Model, Cmd Msg )
@@ -135,9 +40,45 @@ main =
         }
 
 
+
+-------------------------------------------------------
+---------------------- UPDATE ---------------------------
+-------------------------------------------------------
+
+
+type alias Model =
+    { knight : Knight
+    , knightSelected : Maybe LegalMoves
+    }
+
+
+initModel : Model
+initModel =
+    { knight = knightStartingPosition
+    , knightSelected = Nothing
+    }
+
+
+type Msg
+    = ToggleKnightSelect File Rank
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        ToggleKnightSelect file rank ->
+            case model.knightSelected of
+                Nothing ->
+                    ( { model | knightSelected = Just [] }, Cmd.none )
+
+                Just _ ->
+                    ( { model | knightSelected = Nothing }, Cmd.none )
+
+
+
+-------------------------------------------------------
+---------------------- VIEW ---------------------------
+-------------------------------------------------------
 
 
 view : Model -> Document Msg
@@ -166,12 +107,12 @@ view model =
 
 
 board : Model -> List (Html Msg)
-board { knight } =
-    List.map (\file -> div [ css [ marginTop (px 10) ] ] (List.map (\rank -> box rank file knight) ranks)) files
+board model =
+    List.map (\file -> div [ css [ marginTop (px 10) ] ] (List.map (\rank -> box rank file model) ranks)) files
 
 
-box : Rank -> File -> Knight -> Html Msg
-box rank file knight =
+box : Rank -> File -> Model -> Html Msg
+box rank file { knight, knightSelected } =
     let
         boxColor =
             getBoxColor rank file
@@ -187,12 +128,36 @@ box rank file knight =
 
         knightImg =
             if rank == knight.rank && file == knight.file then
-                div [ knightStyles ] [ img [ src "../assets/horse.svg", css [ width (px 90), height (px 90) ] ] [] ]
+                div [ knightStyles ] [ img [ onClick <| ToggleKnightSelect file rank, src "../assets/horse.svg", css [ width (px 70), height (px 70) ] ] [] ]
 
             else
-                div [] []
+                div [ css [ display none ] ] []
+
+        queenImg =
+            if rank == Five && file == D then
+                div [ knightStyles ] [ img [ src "../assets/queen2.svg", css [ width (px 90), height (px 90) ] ] [] ]
+
+            else
+                div [ css [ display none ] ] []
+
+        legalMove =
+            if file == G && rank == Six then
+                legalMoveCircle
+
+            else
+                div [ css [ display none ] ] []
     in
-    div [ css [ width (px 100), height (px 100), borderWidth (px 1), borderStyle solid, boxColor ] ] [ knightImg ]
+    div [ css [ width (px 100), height (px 100), borderWidth (px 1), borderStyle solid, boxColor ], knightStyles ]
+        [ knightImg, queenImg, legalMove ]
+
+
+legalMoveCircle : Html msg
+legalMoveCircle =
+    div
+        [ css
+            [ width (px 20), height (px 20), backgroundColor (rgba 0 0 0 0.4), borderRadius (pc 1.0), borderWidth (px 1), borderColor (rgba 0 0 0 0.7) ]
+        ]
+        []
 
 
 getBoxColor : Rank -> File -> Style
