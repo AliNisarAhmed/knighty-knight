@@ -57,6 +57,7 @@ initModel =
 
 type Msg
     = ToggleKnightSelect File Rank
+    | MoveKnight File Rank
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -69,6 +70,14 @@ update msg model =
 
                 Just _ ->
                     ( { model | knightSelected = Nothing }, Cmd.none )
+
+        MoveKnight file rank ->
+            ( { model
+                | knight = { rank = rank, file = file }
+                , knightSelected = Just <| getLegalMoves file rank
+              }
+            , Cmd.none
+            )
 
 
 
@@ -84,8 +93,6 @@ view model =
             css
                 [ width (px 850)
                 , height (px 850)
-                , borderWidth (px 1)
-                , borderStyle solid
                 , marginLeft auto
                 , marginRight auto
                 , displayFlex
@@ -143,7 +150,7 @@ box rank file { knight, knightSelected } =
 
                 Just legalMoves ->
                     if List.member ( file, rank ) legalMoves then
-                        legalMoveCircle
+                        legalMoveCircle file rank
 
                     else
                         div [ css [ display none ] ] []
@@ -152,10 +159,11 @@ box rank file { knight, knightSelected } =
         [ knightImg, queenImg, legalMove ]
 
 
-legalMoveCircle : Html msg
-legalMoveCircle =
+legalMoveCircle : File -> Rank -> Html Msg
+legalMoveCircle file rank =
     div
-        [ css
+        [ onClick <| MoveKnight file rank
+        , css
             [ width (px 20), height (px 20), backgroundColor (rgba 0 0 0 0.4), borderRadius (pc 1.0), borderWidth (px 1), borderColor (rgba 0 0 0 0.7) ]
         ]
         []
