@@ -2,10 +2,12 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Css exposing (..)
+import Element as E exposing (Element)
 import Html.Styled exposing (Html, div, h1, img, p, text, toUnstyled)
 import Html.Styled.Attributes exposing (css, src)
 import Html.Styled.Events exposing (onClick)
 import RankNFiles exposing (..)
+import Styles as St
 
 
 type alias Knight =
@@ -90,53 +92,13 @@ update msg model =
 -------------------------------------------------------
 
 
-boardWidth : number
-boardWidth =
-    850
-
-
-squareWidth : number
-squareWidth =
-    100
-
-
-knightWidth : number
-knightWidth =
-    70
-
-
-queenWidth : number
-queenWidth =
-    90
-
-
-legalMoveCircleWidth : number
-legalMoveCircleWidth =
-    20
-
-
-squareDarkColor : Color
-squareDarkColor =
-    rgb 232 235 239
-
-
-squareLight : Color
-squareLight =
-    rgb 125 135 150
-
-
-warnColor : Color
-warnColor =
-    rgba 181 20 18 0.8
-
-
 view : Model -> Document Msg
 view model =
     let
         mainStyles =
             css
-                [ width (px boardWidth)
-                , height (px boardWidth)
+                [ width (px St.boardWidth)
+                , height (px St.boardWidth)
                 , marginLeft auto
                 , marginRight auto
                 , displayFlex
@@ -146,11 +108,26 @@ view model =
     in
     { title = "Knighty Knight"
     , body =
-        [ toUnstyled <|
-            div [ mainStyles ] <|
-                board model
+        [ E.layout [] <|
+            E.row [] <|
+                [ board2 model ]
         ]
     }
+
+
+board2 : Model -> Element Msg
+board2 model =
+    E.column [] <|
+        List.map
+            (\rank ->
+                E.row [] <| List.map (\file -> box2 file rank model) files
+            )
+            ranks
+
+
+box2 : File -> Rank -> Model -> Element Msg
+box2 file rank { knight, knightSelected } =
+    E.el St.square <| E.text <| fileToString file ++ (String.fromInt << rankToInt) rank
 
 
 board : Model -> List (Html Msg)
@@ -164,16 +141,15 @@ box rank file { knight, knightSelected } =
         centerContent =
             css [ displayFlex, alignItems center, justifyContent center ]
 
-        boxColor =
-            getBoxColor rank file
-
+        -- boxColor =
+        --     getBoxColor rank file
         queenStyles =
-            css [ width (px squareWidth), height (px squareWidth) ]
+            css [ width (px St.squareWidth), height (px St.squareWidth) ]
 
         knightStyles =
             css
-                [ width (px squareWidth)
-                , height (px squareWidth)
+                [ width (px St.squareWidth)
+                , height (px St.squareWidth)
                 , cursor pointer
                 ]
 
@@ -186,7 +162,7 @@ box rank file { knight, knightSelected } =
                     [ img
                         [ onClick <| ToggleKnightSelect file rank
                         , src "../assets/horse.svg"
-                        , css [ width (px knightWidth), height (px knightWidth) ]
+                        , css [ width (px St.knightWidth), height (px St.knightWidth) ]
                         ]
                         []
                     ]
@@ -203,8 +179,8 @@ box rank file { knight, knightSelected } =
                     [ img
                         [ src "../assets/queen2.svg"
                         , css
-                            [ width (px queenWidth)
-                            , height (px queenWidth)
+                            [ width (px St.queenWidth)
+                            , height (px St.queenWidth)
                             ]
                         ]
                         []
@@ -255,9 +231,8 @@ box rank file { knight, knightSelected } =
         redSquare =
             div
                 [ css
-                    [ width (px squareWidth)
-                    , height (px squareWidth)
-                    , backgroundColor warnColor
+                    [ width (px St.squareWidth)
+                    , height (px St.squareWidth)
                     , opacity (num 0.8)
                     ]
                 ]
@@ -267,16 +242,15 @@ box rank file { knight, knightSelected } =
         [ knightMoveHandler
         , css
             [ position relative
-            , width (px squareWidth)
-            , height (px squareWidth)
+            , width (px St.squareWidth)
+            , height (px St.squareWidth)
             , borderWidth (px 1)
             , borderStyle solid
             , borderColor (rgba 0 0 0 0.7)
-            , boxColor
             , cursorStyle
             ]
         ]
-        [ knightImg, queenImg, legalMoveIndicator, queenMoveSquare ]
+        [ knightImg, queenImg, legalMoveIndicator ]
 
 
 legalMoveCircle : Html Msg
@@ -289,8 +263,8 @@ legalMoveCircle =
             , right (px 0)
             , bottom (px 0)
             , margin auto
-            , width (px legalMoveCircleWidth)
-            , height (px legalMoveCircleWidth)
+            , width (px St.legalMoveCircleWidth)
+            , height (px St.legalMoveCircleWidth)
             , backgroundColor (rgba 0 0 0 0.4)
             , borderRadius (pc 1.0)
             , borderWidth (px 1)
@@ -300,66 +274,50 @@ legalMoveCircle =
         []
 
 
-getBoxColor : Rank -> File -> Style
-getBoxColor r f =
-    let
-        blackBg =
-            backgroundColor squareDarkColor
 
-        whiteBg =
-            backgroundColor squareLight
-    in
-    case ( f, modBy 2 <| rankToInt r ) of
-        ( A, 0 ) ->
-            blackBg
-
-        ( A, 1 ) ->
-            whiteBg
-
-        ( B, 0 ) ->
-            whiteBg
-
-        ( B, 1 ) ->
-            blackBg
-
-        ( C, 0 ) ->
-            blackBg
-
-        ( C, 1 ) ->
-            whiteBg
-
-        ( D, 0 ) ->
-            whiteBg
-
-        ( D, 1 ) ->
-            blackBg
-
-        ( E, 0 ) ->
-            blackBg
-
-        ( E, 1 ) ->
-            whiteBg
-
-        ( F, 0 ) ->
-            whiteBg
-
-        ( F, 1 ) ->
-            blackBg
-
-        ( G, 0 ) ->
-            blackBg
-
-        ( G, 1 ) ->
-            whiteBg
-
-        ( H, 0 ) ->
-            whiteBg
-
-        ( H, 1 ) ->
-            blackBg
-
-        _ ->
-            blackBg
+-- getBoxColor : Rank -> File -> Style
+-- getBoxColor r f =
+--     let
+--         blackBg =
+--             backgroundColor St.squareDarkColor
+--         whiteBg =
+--             backgroundColor St.squareLight
+--     in
+--     case ( f, modBy 2 <| rankToInt r ) of
+--         ( A, 0 ) ->
+--             blackBg
+--         ( A, 1 ) ->
+--             whiteBg
+--         ( B, 0 ) ->
+--             whiteBg
+--         ( B, 1 ) ->
+--             blackBg
+--         ( C, 0 ) ->
+--             blackBg
+--         ( C, 1 ) ->
+--             whiteBg
+--         ( D, 0 ) ->
+--             whiteBg
+--         ( D, 1 ) ->
+--             blackBg
+--         ( E, 0 ) ->
+--             blackBg
+--         ( E, 1 ) ->
+--             whiteBg
+--         ( F, 0 ) ->
+--             whiteBg
+--         ( F, 1 ) ->
+--             blackBg
+--         ( G, 0 ) ->
+--             blackBg
+--         ( G, 1 ) ->
+--             whiteBg
+--         ( H, 0 ) ->
+--             whiteBg
+--         ( H, 1 ) ->
+--             blackBg
+--         _ ->
+--             blackBg
 
 
 emptyDiv : Html Msg
