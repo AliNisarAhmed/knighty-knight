@@ -250,3 +250,35 @@ prevRank r =
 
         One ->
             Nothing
+
+
+queenMoves : List ( File, Rank )
+queenMoves =
+    [ ( D, Six )
+    , ( D, Seven )
+    , ( D, Eight )
+    , ( D, Four )
+    , ( D, Three )
+    , ( D, Two )
+    , ( D, One )
+    , ( E, Five )
+    , ( F, Five )
+    , ( G, Five )
+    , ( H, Five )
+    , ( C, Five )
+    , ( B, Five )
+    , ( A, Five )
+    , ( E, Six )
+    , ( F, Seven )
+    , ( G, Eight )
+    , ( A, Two )
+    , ( B, Three )
+    , ( C, Four )
+    , ( A, Eight )
+    , ( B, Seven )
+    , ( C, Six )
+    , ( E, Four )
+    , ( F, Three )
+    , ( G, Two )
+    , ( H, One )
+    ]

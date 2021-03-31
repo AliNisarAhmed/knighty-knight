@@ -125,6 +125,11 @@ squareLight =
     rgb 125 135 150
 
 
+warnColor : Color
+warnColor =
+    rgba 181 20 18 0.8
+
+
 view : Model -> Document Msg
 view model =
     let
@@ -236,6 +241,27 @@ box rank file { knight, knightSelected } =
 
             else
                 cursor default
+
+        isQueenMove =
+            List.member ( file, rank ) queenMoves
+
+        queenMoveSquare =
+            if isQueenMove then
+                redSquare
+
+            else
+                emptyDiv
+
+        redSquare =
+            div
+                [ css
+                    [ width (px squareWidth)
+                    , height (px squareWidth)
+                    , backgroundColor warnColor
+                    , opacity (num 0.8)
+                    ]
+                ]
+                []
     in
     div
         [ knightMoveHandler
@@ -245,11 +271,12 @@ box rank file { knight, knightSelected } =
             , height (px squareWidth)
             , borderWidth (px 1)
             , borderStyle solid
+            , borderColor (rgba 0 0 0 0.7)
             , boxColor
             , cursorStyle
             ]
         ]
-        [ knightImg, queenImg, legalMoveIndicator ]
+        [ knightImg, queenImg, legalMoveIndicator, queenMoveSquare ]
 
 
 legalMoveCircle : Html Msg

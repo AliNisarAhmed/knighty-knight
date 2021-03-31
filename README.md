@@ -2,7 +2,7 @@
 
 A Chess Knight movement training app. Can you take your knight, standing at h8, to the a1 square (in the sequence indicated, visiting all the squares not under attack) while avoiding the enemy Queen standing at d5?
 
-(![ScreenShot](https://raw.github.com/AliNisarAhmed/knighty-knight/master/assets/screenshot.png))
+![ScreenShot](https://raw.github.com/AliNisarAhmed/knighty-knight/master/assets/screenshot.png)
 
 ***
 
