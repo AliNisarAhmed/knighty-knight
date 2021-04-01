@@ -11354,6 +11354,7 @@ var $author$project$Styles$knight = _List_fromArray(
 		$mdgriffith$elm_ui$Element$px($author$project$Styles$knightWidth)),
 		$mdgriffith$elm_ui$Element$pointer
 	]);
+var $author$project$Main$knightFilePath = './assets/horse.svg';
 var $mdgriffith$elm_ui$Element$el = F2(
 	function (attrs, child) {
 		return A4(
@@ -11477,6 +11478,7 @@ var $author$project$Styles$queen = _List_fromArray(
 		$mdgriffith$elm_ui$Element$height(
 		$mdgriffith$elm_ui$Element$px($author$project$Styles$queenWidth))
 	]);
+var $author$project$Main$queenFilePath = './assets/queen2.svg';
 var $mdgriffith$elm_ui$Internal$Model$AsRow = 0;
 var $mdgriffith$elm_ui$Internal$Model$asRow = 0;
 var $mdgriffith$elm_ui$Element$row = F2(
@@ -11674,7 +11676,7 @@ var $author$project$Main$box2 = F3(
 		var queenImg = ((file === 3) && (rank === 4)) ? A2(
 			$mdgriffith$elm_ui$Element$image,
 			$author$project$Styles$queen,
-			{ce: 'Queen', cU: '../assets/queen2.svg'}) : $mdgriffith$elm_ui$Element$none;
+			{ce: 'Queen', cU: $author$project$Main$queenFilePath}) : $mdgriffith$elm_ui$Element$none;
 		var move = function () {
 			if (knightSelected.$ === 1) {
 				return 1;
@@ -11709,7 +11711,7 @@ var $author$project$Main$box2 = F3(
 		var knightImg = (_Utils_eq(file, knight.bf) && _Utils_eq(rank, knight.bo)) ? A2(
 			$mdgriffith$elm_ui$Element$image,
 			_Utils_ap($author$project$Styles$knight, knightClickEvent),
-			{ce: 'Knight', cU: '../assets/horse.svg'}) : $mdgriffith$elm_ui$Element$none;
+			{ce: 'Knight', cU: $author$project$Main$knightFilePath}) : $mdgriffith$elm_ui$Element$none;
 		var boxColor = A2($author$project$Main$getBoxColor, file, rank);
 		if (!move) {
 			return A2(
