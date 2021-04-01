@@ -2,10 +2,14 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Css exposing (..)
+import Element as E exposing (Color, Element)
+import Element.Events as Ev
+import Element.Input as Input
 import Html.Styled exposing (Html, div, h1, img, p, text, toUnstyled)
 import Html.Styled.Attributes exposing (css, src)
 import Html.Styled.Events exposing (onClick)
 import RankNFiles exposing (..)
+import Styles as St
 
 
 type alias Knight =
@@ -90,224 +94,107 @@ update msg model =
 -------------------------------------------------------
 
 
-boardWidth : number
-boardWidth =
-    850
-
-
-squareWidth : number
-squareWidth =
-    100
-
-
-knightWidth : number
-knightWidth =
-    70
-
-
-queenWidth : number
-queenWidth =
-    90
-
-
-legalMoveCircleWidth : number
-legalMoveCircleWidth =
-    20
-
-
-squareDarkColor : Color
-squareDarkColor =
-    rgb 232 235 239
-
-
-squareLight : Color
-squareLight =
-    rgb 125 135 150
-
-
-warnColor : Color
-warnColor =
-    rgba 181 20 18 0.8
-
-
 view : Model -> Document Msg
 view model =
-    let
-        mainStyles =
-            css
-                [ width (px boardWidth)
-                , height (px boardWidth)
-                , marginLeft auto
-                , marginRight auto
-                , displayFlex
-                , flexWrap wrap
-                , boxSizing borderBox
-                ]
-    in
     { title = "Knighty Knight"
     , body =
-        [ toUnstyled <|
-            div [ mainStyles ] <|
-                board model
+        [ E.layout St.layout <|
+            E.row St.layout <|
+                [ board2 model ]
         ]
     }
 
 
-board : Model -> List (Html Msg)
-board model =
-    List.map (\file -> div [ css [ marginTop (px 10) ] ] (List.map (\rank -> box rank file model) ranks)) files
+board2 : Model -> Element Msg
+board2 model =
+    E.column [] <|
+        List.map
+            (\rank ->
+                E.row [] <| List.map (\file -> box2 file rank model) files
+            )
+            ranks
 
 
-box : Rank -> File -> Model -> Html Msg
-box rank file { knight, knightSelected } =
+box2 : File -> Rank -> Model -> Element Msg
+box2 file rank { knight, knightSelected } =
     let
-        centerContent =
-            css [ displayFlex, alignItems center, justifyContent center ]
-
         boxColor =
-            getBoxColor rank file
+            getBoxColor file rank
 
-        queenStyles =
-            css [ width (px squareWidth), height (px squareWidth) ]
-
-        knightStyles =
-            css
-                [ width (px squareWidth)
-                , height (px squareWidth)
-                , cursor pointer
-                ]
+        knightClickEvent =
+            [ Ev.onClick <| ToggleKnightSelect file rank ]
 
         knightImg =
-            if rank == knight.rank && file == knight.file then
-                div
-                    [ centerContent
-                    , knightStyles
-                    ]
-                    [ img
-                        [ onClick <| ToggleKnightSelect file rank
-                        , src "../assets/horse.svg"
-                        , css [ width (px knightWidth), height (px knightWidth) ]
-                        ]
-                        []
-                    ]
+            if file == knight.file && rank == knight.rank then
+                E.image
+                    (St.knight ++ knightClickEvent)
+                    { src = "../assets/horse.svg", description = "Knight" }
 
             else
-                div [ css [ display none ] ] []
+                E.none
 
-        queenImg =
-            if rank == Five && file == D then
-                div
-                    [ centerContent
-                    , queenStyles
-                    ]
-                    [ img
-                        [ src "../assets/queen2.svg"
-                        , css
-                            [ width (px queenWidth)
-                            , height (px queenWidth)
-                            ]
-                        ]
-                        []
-                    ]
-
-            else
-                div [ css [ display none ] ] []
-
-        isLegalMove =
+        move =
             case knightSelected of
                 Nothing ->
-                    False
+                    Illegal
 
                 Just legalMoves ->
-                    List.member ( file, rank ) legalMoves
+                    if List.member ( file, rank ) legalMoves then
+                        Legal
+
+                    else
+                        Illegal
 
         legalMoveIndicator =
-            if isLegalMove then
-                legalMoveCircle
+            case move of
+                Legal ->
+                    legalMoveCircle
+
+                Illegal ->
+                    E.none
+
+        moveHandler =
+            case move of
+                Legal ->
+                    Just <| MoveKnight file rank
+
+                Illegal ->
+                    Nothing
+
+        queenImg =
+            if file == D && rank == Five then
+                E.image
+                    St.queen
+                    { src = "../assets/queen2.svg", description = "Queen" }
 
             else
-                emptyDiv
-
-        knightMoveHandler =
-            if isLegalMove then
-                onClick <| MoveKnight file rank
-
-            else
-                onClick <| NoOp
-
-        cursorStyle =
-            if isLegalMove then
-                cursor pointer
-
-            else
-                cursor default
-
-        isQueenMove =
-            List.member ( file, rank ) queenMoves
-
-        queenMoveSquare =
-            if isQueenMove then
-                redSquare
-
-            else
-                emptyDiv
-
-        redSquare =
-            div
-                [ css
-                    [ width (px squareWidth)
-                    , height (px squareWidth)
-                    , backgroundColor warnColor
-                    , opacity (num 0.8)
-                    ]
-                ]
-                []
+                E.none
     in
-    div
-        [ knightMoveHandler
-        , css
-            [ position relative
-            , width (px squareWidth)
-            , height (px squareWidth)
-            , borderWidth (px 1)
-            , borderStyle solid
-            , borderColor (rgba 0 0 0 0.7)
-            , boxColor
-            , cursorStyle
-            ]
-        ]
-        [ knightImg, queenImg, legalMoveIndicator, queenMoveSquare ]
+    case move of
+        Legal ->
+            Input.button
+                (St.square boxColor)
+                { onPress = moveHandler
+                , label = E.row (St.legalMoveSquare legalMoveCircle) [ queenImg ]
+                }
+
+        Illegal ->
+            E.row (St.square boxColor) <| [ knightImg, queenImg ]
 
 
-legalMoveCircle : Html Msg
+legalMoveCircle : Element Msg
 legalMoveCircle =
-    div
-        [ css
-            [ position absolute
-            , top (px 0)
-            , left (px 0)
-            , right (px 0)
-            , bottom (px 0)
-            , margin auto
-            , width (px legalMoveCircleWidth)
-            , height (px legalMoveCircleWidth)
-            , backgroundColor (rgba 0 0 0 0.4)
-            , borderRadius (pc 1.0)
-            , borderWidth (px 1)
-            , borderColor (rgba 0 0 0 0.7)
-            ]
-        ]
-        []
+    E.el St.legalMoveCircle E.none
 
 
-getBoxColor : Rank -> File -> Style
-getBoxColor r f =
+getBoxColor : File -> Rank -> Color
+getBoxColor f r =
     let
         blackBg =
-            backgroundColor squareDarkColor
+            St.squareDarkColor
 
         whiteBg =
-            backgroundColor squareLight
+            St.squareLight
     in
     case ( f, modBy 2 <| rankToInt r ) of
         ( A, 0 ) ->
@@ -360,8 +247,3 @@ getBoxColor r f =
 
         _ ->
             blackBg
-
-
-emptyDiv : Html Msg
-emptyDiv =
-    div [ css [ display none ] ] []
