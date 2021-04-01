@@ -88,25 +88,33 @@ update msg model =
 
         MoveKnight file rank ->
             let
-                newTarget =
-                    if model.currentTarget == ( file, rank ) then
-                        case getNextTarget ( file, rank ) of
-                            Just nt ->
-                                nt
-
-                            Nothing ->
-                                model.currentTarget
-
-                    else
-                        model.currentTarget
+                isAttackedByQueen =
+                    List.member ( file, rank ) queenMoves
             in
-            ( { model
-                | knight = { rank = rank, file = file }
-                , knightSelected = Just <| getLegalMoves file rank
-                , currentTarget = newTarget
-              }
-            , Cmd.none
-            )
+            if isAttackedByQueen then
+                ( model, Cmd.none )
+
+            else
+                let
+                    newTarget =
+                        if model.currentTarget == ( file, rank ) then
+                            case getNextTarget ( file, rank ) of
+                                Just nt ->
+                                    nt
+
+                                Nothing ->
+                                    model.currentTarget
+
+                        else
+                            model.currentTarget
+                in
+                ( { model
+                    | knight = { rank = rank, file = file }
+                    , knightSelected = Just <| getLegalMoves file rank
+                    , currentTarget = newTarget
+                  }
+                , Cmd.none
+                )
 
         NoOp ->
             ( model, Cmd.none )
@@ -124,23 +132,23 @@ view model =
     , body =
         [ E.layout St.layout <|
             E.row St.layout <|
-                [ board2 model ]
+                [ board model ]
         ]
     }
 
 
-board2 : Model -> Element Msg
-board2 model =
+board : Model -> Element Msg
+board model =
     E.column [] <|
         List.map
             (\rank ->
-                E.row [] <| List.map (\file -> box2 file rank model) files
+                E.row [] <| List.map (\file -> box file rank model) files
             )
             ranks
 
 
-box2 : File -> Rank -> Model -> Element Msg
-box2 file rank { knight, knightSelected, currentTarget } =
+box : File -> Rank -> Model -> Element Msg
+box file rank { knight, knightSelected, currentTarget } =
     let
         boxColor =
             getBoxColor file rank
@@ -168,14 +176,6 @@ box2 file rank { knight, knightSelected, currentTarget } =
 
                     else
                         Illegal
-
-        legalMoveIndicator =
-            case move of
-                Legal ->
-                    legalMoveCircle
-
-                Illegal ->
-                    E.none
 
         moveHandler =
             case move of
