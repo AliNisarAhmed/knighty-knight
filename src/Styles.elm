@@ -58,6 +58,11 @@ legalMoveCircleColor =
     E.rgba255 0 0 0 0.6
 
 
+targetColor : Color
+targetColor =
+    E.rgba 0 1 0 0.6
+
+
 
 ---- STYLES ----
 -- debug =
@@ -82,6 +87,20 @@ square color =
     , E.centerY
     , E.centerX
     , E.focused []
+    ]
+
+
+targetSquare : List (Attribute msg)
+targetSquare =
+    [ E.width <| E.px squareWidth
+    , E.height <| E.px squareWidth
+    , Border.width 1
+    , Border.solid
+    , B.color targetColor
+    , E.centerY
+    , E.centerX
+    , E.focused []
+    , B.color targetColor
     ]
 
 

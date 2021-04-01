@@ -1,5 +1,6 @@
 module RankNFiles exposing (..)
 
+import List.Extra exposing (dropWhile)
 import Maybe.Extra exposing (values)
 
 
@@ -257,6 +258,14 @@ prevRank r =
             Nothing
 
 
+getNextTarget : ( File, Rank ) -> Maybe ( File, Rank )
+getNextTarget fr =
+    validSequence
+        |> dropWhile (\item -> item /= fr)
+        |> List.drop 1
+        |> List.head
+
+
 queenMoves : List ( File, Rank )
 queenMoves =
     [ ( D, Six )
@@ -286,4 +295,44 @@ queenMoves =
     , ( F, Three )
     , ( G, Two )
     , ( H, One )
+    ]
+
+
+validSequence : List ( File, Rank )
+validSequence =
+    [ ( H, Eight )
+    , ( F, Eight )
+    , ( E, Eight )
+    , ( C, Eight )
+    , ( B, Eight )
+    , ( H, Seven )
+    , ( G, Seven )
+    , ( E, Seven )
+    , ( C, Seven )
+    , ( A, Seven )
+    , ( H, Six )
+    , ( G, Six )
+    , ( F, Six )
+    , ( B, Six )
+    , ( A, Six )
+    , ( H, Four )
+    , ( G, Four )
+    , ( F, Four )
+    , ( B, Four )
+    , ( A, Four )
+    , ( H, Three )
+    , ( G, Three )
+    , ( B, Three )
+    , ( A, Three )
+    , ( H, Two )
+    , ( F, Two )
+    , ( E, Two )
+    , ( C, Two )
+    , ( B, Two )
+    , ( G, One )
+    , ( F, One )
+    , ( E, One )
+    , ( C, One )
+    , ( B, One )
+    , ( A, One )
     ]

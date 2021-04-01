@@ -13,11 +13,11 @@ import Styles as St
 
 
 knightFilePath =
-    "./assets/horse.svg"
+    "assets/horse.svg"
 
 
 queenFilePath =
-    "./assets/queen2.svg"
+    "assets/queen2.svg"
 
 
 type alias Knight =
@@ -57,6 +57,7 @@ main =
 type alias Model =
     { knight : Knight
     , knightSelected : Maybe LegalMoves
+    , currentTarget : ( File, Rank )
     }
 
 
@@ -64,6 +65,7 @@ initModel : Model
 initModel =
     { knight = knightStartingPosition
     , knightSelected = Nothing
+    , currentTarget = ( F, Eight )
     }
 
 
@@ -85,9 +87,23 @@ update msg model =
                     ( { model | knightSelected = Nothing }, Cmd.none )
 
         MoveKnight file rank ->
+            let
+                newTarget =
+                    if model.currentTarget == ( file, rank ) then
+                        case getNextTarget ( file, rank ) of
+                            Just nt ->
+                                nt
+
+                            Nothing ->
+                                model.currentTarget
+
+                    else
+                        model.currentTarget
+            in
             ( { model
                 | knight = { rank = rank, file = file }
                 , knightSelected = Just <| getLegalMoves file rank
+                , currentTarget = newTarget
               }
             , Cmd.none
             )
@@ -124,7 +140,7 @@ board2 model =
 
 
 box2 : File -> Rank -> Model -> Element Msg
-box2 file rank { knight, knightSelected } =
+box2 file rank { knight, knightSelected, currentTarget } =
     let
         boxColor =
             getBoxColor file rank
@@ -177,17 +193,24 @@ box2 file rank { knight, knightSelected } =
 
             else
                 E.none
+
+        targetSquare =
+            if ( file, rank ) == currentTarget then
+                E.el St.targetSquare E.none
+
+            else
+                E.none
     in
     case move of
         Legal ->
             Input.button
                 (St.square boxColor)
                 { onPress = moveHandler
-                , label = E.row (St.legalMoveSquare legalMoveCircle) [ queenImg ]
+                , label = E.row (St.legalMoveSquare legalMoveCircle) [ queenImg, targetSquare ]
                 }
 
         Illegal ->
-            E.row (St.square boxColor) <| [ knightImg, queenImg ]
+            E.row (St.square boxColor) <| [ knightImg, queenImg, targetSquare ]
 
 
 legalMoveCircle : Element Msg
