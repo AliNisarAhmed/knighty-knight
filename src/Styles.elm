@@ -60,10 +60,8 @@ legalMoveCircleColor =
 
 
 ---- STYLES ----
-
-
-debug =
-    E.explain Debug.todo
+-- debug =
+--     E.explain Debug.todo
 
 
 layout : List (Attribute msg)
