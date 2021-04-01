@@ -3,8 +3,7 @@ module Styles exposing (..)
 import Element as E exposing (Attribute, Color, Element)
 import Element.Background as B
 import Element.Border as Border
-import Element.Events as Ev
-import Element.Font as F
+import Element.Font as Font
 import RankNFiles exposing (Move(..))
 
 
@@ -75,8 +74,15 @@ targetColor =
 
 
 ---- STYLES ----
--- debug =
---     E.explain Debug.todo
+
+
+debug =
+    E.explain Debug.todo
+
+
+center : List (Attribute msg)
+center =
+    [ E.centerY, E.centerX ]
 
 
 layout : List (Attribute msg)
@@ -165,3 +171,30 @@ legalMoveCircle =
 legalMoveSquare : Element msg -> List (Attribute msg)
 legalMoveSquare e =
     [ E.width E.fill, E.height E.fill, E.centerX, E.centerY, E.inFront e ]
+
+
+rankLabelText : List (Attribute msg)
+rankLabelText =
+    [ Font.color <| E.rgb 1 1 1
+    , E.centerX
+    , E.centerY
+    , E.paddingXY 5 0
+    , E.width (E.px 20)
+    ]
+
+
+blankRankLabel : List (Attribute msg)
+blankRankLabel =
+    [ E.paddingXY 5 0
+    , E.width (E.px 20)
+    ]
+
+
+fileLabelText : List (Attribute msg)
+fileLabelText =
+    [ Font.color <| E.rgb 1 1 1
+    , E.centerY
+    , E.centerX
+    , E.paddingXY 0 7
+    , E.width (E.px squareWidth)
+    ]

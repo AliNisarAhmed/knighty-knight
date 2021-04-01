@@ -101,6 +101,11 @@ rankToInt f =
             8
 
 
+rankToString : Rank -> String
+rankToString =
+    rankToInt >> String.fromInt
+
+
 combineToLegalMove : Maybe File -> Maybe Rank -> Maybe ( File, Rank )
 combineToLegalMove mf mr =
     case ( mf, mr ) of

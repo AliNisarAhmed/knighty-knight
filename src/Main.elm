@@ -139,9 +139,12 @@ board model =
     E.column [] <|
         List.map
             (\rank ->
-                E.row [] <| List.map (\file -> box file rank model) files
+                E.row [] <|
+                    rankLabel rank
+                        :: List.map (\file -> box file rank model) files
             )
             ranks
+            ++ [ E.row [] <| E.el St.blankRankLabel E.none :: List.map fileLabel files ]
 
 
 box : File -> Rank -> Model -> Element Msg
@@ -221,6 +224,16 @@ box file rank { knight, knightSelected, currentTarget } =
 legalMoveCircle : Element Msg
 legalMoveCircle =
     E.el St.legalMoveCircle E.none
+
+
+rankLabel : Rank -> Element Msg
+rankLabel rank =
+    E.el St.rankLabelText (E.text <| rankToString rank)
+
+
+fileLabel : File -> Element Msg
+fileLabel file =
+    E.el St.fileLabelText (E.el St.center <| E.text <| fileToString file)
 
 
 getBoxColor : File -> Rank -> Color
