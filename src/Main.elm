@@ -5,9 +5,6 @@ import Css exposing (..)
 import Element as E exposing (Color, Element)
 import Element.Events as Ev
 import Element.Input as Input
-import Html.Styled exposing (Html, div, h1, img, p, text, toUnstyled)
-import Html.Styled.Attributes exposing (css, src)
-import Html.Styled.Events exposing (onClick)
 import RankNFiles exposing (..)
 import Styles as St
 
@@ -156,10 +153,18 @@ box file rank { knight, knightSelected, currentTarget } =
         knightClickEvent =
             [ Ev.onClick <| ToggleKnightSelect file rank ]
 
+        knightStyles =
+            case knightSelected of
+                Just _ ->
+                    St.selectedKnight
+
+                Nothing ->
+                    St.knight
+
         knightImg =
             if file == knight.file && rank == knight.rank then
                 E.image
-                    (St.knight ++ knightClickEvent)
+                    (knightStyles ++ knightClickEvent)
                     { src = knightFilePath, description = "Knight" }
 
             else

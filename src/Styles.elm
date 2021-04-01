@@ -20,6 +20,11 @@ squareWidth =
 
 knightWidth : number
 knightWidth =
+    60
+
+
+selectedKnightWidth : number
+selectedKnightWidth =
     70
 
 
@@ -56,6 +61,11 @@ bgColor =
 legalMoveCircleColor : Color
 legalMoveCircleColor =
     E.rgba255 0 0 0 0.6
+
+
+legalMoveCircleColorLight : Color
+legalMoveCircleColorLight =
+    E.rgba255 0 0 0 0.23
 
 
 targetColor : Color
@@ -111,6 +121,24 @@ knight =
     , E.width <| E.px knightWidth
     , E.height <| E.px knightWidth
     , E.pointer
+    ]
+
+
+selectedKnight : List (Attribute msg)
+selectedKnight =
+    [ E.centerX
+    , E.centerY
+    , E.width <| E.px selectedKnightWidth
+    , E.height <| E.px selectedKnightWidth
+    , E.pointer
+    , Border.shadow
+        { offset = ( 0, 0 )
+        , size = 0.1
+        , blur = 40
+        , color = legalMoveCircleColor
+        }
+    , B.color legalMoveCircleColorLight
+    , Border.rounded 20
     ]
 
 
