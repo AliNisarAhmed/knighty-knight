@@ -106,6 +106,11 @@ rankToString =
     rankToInt >> String.fromInt
 
 
+squareToString : ( File, Rank ) -> String
+squareToString ( file, rank ) =
+    fileToString file ++ rankToString rank
+
+
 combineToLegalMove : Maybe File -> Maybe Rank -> Maybe ( File, Rank )
 combineToLegalMove mf mr =
     case ( mf, mr ) of

@@ -5,8 +5,10 @@ import Css exposing (..)
 import Element as E exposing (Color, Element)
 import Element.Events as Ev
 import Element.Input as Input
+import Maybe exposing (Maybe(..))
 import RankNFiles exposing (..)
 import Styles as St
+import Time
 
 
 knightFilePath =
@@ -15,6 +17,12 @@ knightFilePath =
 
 queenFilePath =
     "assets/queen2.svg"
+
+
+type GameState
+    = NotStarted
+    | Started
+    | Finished
 
 
 type alias Knight =
@@ -41,7 +49,7 @@ main =
         { init = always ( initModel, Cmd.none )
         , view = view
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
 
 
@@ -55,6 +63,10 @@ type alias Model =
     { knight : Knight
     , knightSelected : Maybe LegalMoves
     , currentTarget : ( File, Rank )
+    , totalMoves : Int
+    , wrongMoves : Int
+    , gameState : GameState
+    , timer : Maybe Int
     }
 
 
@@ -63,13 +75,28 @@ initModel =
     { knight = knightStartingPosition
     , knightSelected = Nothing
     , currentTarget = ( F, Eight )
+    , totalMoves = 0
+    , wrongMoves = 0
+    , gameState = NotStarted
+    , timer = Nothing
     }
 
 
 type Msg
     = ToggleKnightSelect File Rank
     | MoveKnight File Rank
+    | Tick Time.Posix
     | NoOp
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.gameState of
+        Started ->
+            Time.every 1000 Tick
+
+        _ ->
+            Sub.none
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -89,7 +116,7 @@ update msg model =
                     List.member ( file, rank ) queenMoves
             in
             if isAttackedByQueen then
-                ( model, Cmd.none )
+                ( { model | wrongMoves = model.wrongMoves + 1 }, Cmd.none )
 
             else
                 let
@@ -104,14 +131,36 @@ update msg model =
 
                         else
                             model.currentTarget
+
+                    newGameState =
+                        case model.gameState of
+                            NotStarted ->
+                                Started
+
+                            _ ->
+                                Started
                 in
                 ( { model
                     | knight = { rank = rank, file = file }
                     , knightSelected = Just <| getLegalMoves file rank
                     , currentTarget = newTarget
+                    , totalMoves = model.totalMoves + 1
+                    , gameState = newGameState
                   }
                 , Cmd.none
                 )
+
+        Tick _ ->
+            let
+                newTime =
+                    case model.timer of
+                        Nothing ->
+                            Just 1
+
+                        Just secs ->
+                            Just <| secs + 1
+            in
+            ( { model | timer = newTime }, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -128,23 +177,45 @@ view model =
     { title = "Knighty Knight"
     , body =
         [ E.layout St.layout <|
-            E.row St.layout <|
-                [ board model ]
+            E.row St.content <|
+                [ E.column St.mainContent <| [ mainContent model ]
+                , E.column St.boardColumn <| board model
+                ]
         ]
     }
 
 
-board : Model -> Element Msg
+mainContent : Model -> Element Msg
+mainContent { currentTarget, totalMoves, wrongMoves, timer } =
+    E.column []
+        [ E.row St.heading <|
+            [ E.textColumn
+                [ E.width E.fill ]
+                [ E.el St.center <| E.text "Knighty Knight" ]
+            ]
+        , E.row [] <|
+            [ E.textColumn
+                []
+                [ E.el [] <| E.text <| squareToString currentTarget ]
+            ]
+        , E.row [] <|
+            [ E.el [] <| E.text <| "Total Moves: " ++ String.fromInt totalMoves ]
+        , E.row [] <|
+            [ E.el [] <| E.text <| "Wrong Attempted moves: " ++ String.fromInt wrongMoves ]
+        , displayTimer timer
+        ]
+
+
+board : Model -> List (Element Msg)
 board model =
-    E.column [] <|
-        List.map
-            (\rank ->
-                E.row [] <|
-                    rankLabel rank
-                        :: List.map (\file -> box file rank model) files
-            )
-            ranks
-            ++ [ E.row [] <| E.el St.blankRankLabel E.none :: List.map fileLabel files ]
+    List.map
+        (\rank ->
+            E.row [] <|
+                rankLabel rank
+                    :: List.map (\file -> box file rank model) files
+        )
+        ranks
+        ++ fileLabelRow files
 
 
 box : File -> Rank -> Model -> Element Msg
@@ -231,9 +302,24 @@ rankLabel rank =
     E.el St.rankLabelText (E.text <| rankToString rank)
 
 
+fileLabelRow : List File -> List (Element Msg)
+fileLabelRow files =
+    [ E.row [] <| E.el St.blankRankLabel E.none :: List.map fileLabel files ]
+
+
 fileLabel : File -> Element Msg
 fileLabel file =
     E.el St.fileLabelText (E.el St.center <| E.text <| fileToString file)
+
+
+displayTimer : Maybe Int -> Element msg
+displayTimer timer =
+    case timer of
+        Nothing ->
+            E.none
+
+        Just secs ->
+            E.el [] <| E.text <| "Time elapsed: " ++ String.fromInt secs ++ " seconds"
 
 
 getBoxColor : File -> Rank -> Color

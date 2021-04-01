@@ -72,6 +72,11 @@ targetColor =
     E.rgba 0 1 0 0.6
 
 
+knightColor : Color
+knightColor =
+    E.rgb255 82 27 59
+
+
 
 ---- STYLES ----
 
@@ -90,6 +95,41 @@ layout =
     [ E.centerX
     , E.centerY
     , B.color bgColor
+    , E.width E.fill
+    , E.height E.fill
+    ]
+
+
+content : List (Attribute msg)
+content =
+    [ E.centerX
+    , E.centerY
+    , E.width E.fill
+    , E.height E.fill
+    , E.paddingXY 20 20
+    ]
+
+
+mainContent : List (Attribute msg)
+mainContent =
+    [ E.width <| E.fillPortion 3
+    , E.height E.fill
+    ]
+
+
+heading : List (Attribute msg)
+heading =
+    [ Font.color knightColor
+    , Font.size 60
+    , Font.bold
+    , E.width E.fill
+    ]
+
+
+boardColumn : List (Attribute msg)
+boardColumn =
+    [ E.width (E.fillPortion 1)
+    , E.alignRight
     ]
 
 
