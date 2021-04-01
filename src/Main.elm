@@ -12,6 +12,14 @@ import RankNFiles exposing (..)
 import Styles as St
 
 
+knightFilePath =
+    "./assets/horse.svg"
+
+
+queenFilePath =
+    "./assets/queen2.svg"
+
+
 type alias Knight =
     { rank : Rank
     , file : File
@@ -128,7 +136,7 @@ box2 file rank { knight, knightSelected } =
             if file == knight.file && rank == knight.rank then
                 E.image
                     (St.knight ++ knightClickEvent)
-                    { src = "../assets/horse.svg", description = "Knight" }
+                    { src = knightFilePath, description = "Knight" }
 
             else
                 E.none
@@ -165,7 +173,7 @@ box2 file rank { knight, knightSelected } =
             if file == D && rank == Five then
                 E.image
                     St.queen
-                    { src = "../assets/queen2.svg", description = "Queen" }
+                    { src = queenFilePath, description = "Queen" }
 
             else
                 E.none
