@@ -3,6 +3,11 @@ module RankNFiles exposing (..)
 import Maybe.Extra exposing (values)
 
 
+type Move
+    = Legal
+    | Illegal
+
+
 type File
     = A
     | B
