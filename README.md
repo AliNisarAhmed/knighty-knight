@@ -19,3 +19,5 @@ The Knight icon made by [Pixel perfect](https://www.flaticon.com/authors/pixel-p
 
 
 The Queen icon is made by [Freepik](https://www.flaticon.com/authors/freepik) team from [www.flaticon.com](www.flaticon.com)
+
+The move sound is from [Lichess](https://lichess.org)

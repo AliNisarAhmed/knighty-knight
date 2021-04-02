@@ -1,4 +1,6 @@
 elm-stuff/
 node_modules/
-build/
+build/elm.js
+build/index.html
 index.html
+./elm.js
