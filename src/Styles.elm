@@ -14,22 +14,22 @@ boardWidth =
 
 squareWidth : number
 squareWidth =
-    100
+    90
 
 
 knightWidth : number
 knightWidth =
-    60
+    50
 
 
 selectedKnightWidth : number
 selectedKnightWidth =
-    70
+    60
 
 
 queenWidth : number
 queenWidth =
-    90
+    80
 
 
 legalMoveCircleWidth : number
@@ -95,7 +95,7 @@ layout =
     [ E.centerX
     , E.centerY
     , B.color bgColor
-    , E.width E.fill
+    , E.width <| E.fill
     , E.height E.fill
     ]
 
@@ -104,7 +104,7 @@ content : List (Attribute msg)
 content =
     [ E.centerX
     , E.centerY
-    , E.width E.fill
+    , E.width <| (E.fill |> E.maximum 1400 |> E.minimum 400)
     , E.height E.fill
     , E.paddingXY 20 20
     ]
@@ -137,8 +137,6 @@ square : Color -> List (Attribute msg)
 square color =
     [ E.width <| E.px squareWidth
     , E.height <| E.px squareWidth
-    , Border.width 1
-    , Border.solid
     , B.color color
     , E.centerY
     , E.centerX
@@ -150,8 +148,6 @@ targetSquare : List (Attribute msg)
 targetSquare =
     [ E.width <| E.px squareWidth
     , E.height <| E.px squareWidth
-    , Border.width 1
-    , Border.solid
     , B.color targetColor
     , E.centerY
     , E.centerX

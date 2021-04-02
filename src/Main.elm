@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser exposing (Document)
 import Css exposing (..)
@@ -99,6 +99,9 @@ subscriptions model =
             Sub.none
 
 
+port playSound : () -> Cmd msg
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -147,7 +150,7 @@ update msg model =
                     , totalMoves = model.totalMoves + 1
                     , gameState = newGameState
                   }
-                , Cmd.none
+                , playSound ()
                 )
 
         Tick _ ->
