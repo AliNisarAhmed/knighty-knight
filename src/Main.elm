@@ -322,7 +322,19 @@ displayTimer timer =
             E.none
 
         Just secs ->
-            E.el [] <| E.text <| "Time elapsed: " ++ String.fromInt secs ++ " seconds"
+            E.el [] <| E.text <| "Time elapsed: " ++ showTime secs
+
+
+showTime : Int -> String
+showTime secs =
+    let
+        seconds =
+            modBy 60 secs
+
+        minutes =
+            secs // 60
+    in
+    String.fromInt minutes ++ ":" ++ String.fromInt seconds
 
 
 getBoxColor : File -> Rank -> Color
