@@ -21,6 +21,7 @@ queenFilePath =
 
 type GameState
     = NotStarted
+    | Ready
     | Started
     | Finished
 
@@ -86,6 +87,8 @@ type Msg
     = ToggleKnightSelect File Rank
     | MoveKnight File Rank
     | Tick Time.Posix
+    | StartPressed
+    | ResetGame
     | NoOp
 
 
@@ -105,6 +108,17 @@ port playSound : () -> Cmd msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        StartPressed ->
+            ( { model
+                | knightSelected = Just <| getLegalMoves H Eight
+                , gameState = Ready
+              }
+            , Cmd.none
+            )
+
+        ResetGame ->
+            ( initModel, Cmd.none )
+
         ToggleKnightSelect file rank ->
             case model.knightSelected of
                 Nothing ->
@@ -181,32 +195,56 @@ view model =
     , body =
         [ E.layout St.layout <|
             E.row St.content <|
-                [ E.column St.mainContent <| [ mainContent model ]
+                [ E.column St.mainContent <| mainContent model
                 , E.column St.boardColumn <| board model
                 ]
         ]
     }
 
 
-mainContent : Model -> Element Msg
-mainContent { currentTarget, totalMoves, wrongMoves, timer } =
-    E.column []
-        [ E.row St.heading <|
-            [ E.textColumn
-                [ E.width E.fill ]
-                [ E.el St.center <| E.text "Knighty Knight" ]
+mainContent : Model -> List (Element Msg)
+mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
+    case gameState of
+        NotStarted ->
+            [ title
+            , explanation
+            , startButton
             ]
-        , E.row [] <|
-            [ E.textColumn
-                []
-                [ E.el [] <| E.text <| squareToString currentTarget ]
+
+        _ ->
+            [ title
+            , E.row [] <|
+                [ E.textColumn
+                    []
+                    [ E.el [] <| E.text <| squareToString currentTarget ]
+                ]
+            , E.row [] <|
+                [ E.el [] <| E.text <| "Total Moves: " ++ String.fromInt totalMoves ]
+            , E.row [] <|
+                [ E.el [] <| E.text <| "Wrong Attempted moves: " ++ String.fromInt wrongMoves ]
+            , displayTimer timer
+            , resetButton
             ]
-        , E.row [] <|
-            [ E.el [] <| E.text <| "Total Moves: " ++ String.fromInt totalMoves ]
-        , E.row [] <|
-            [ E.el [] <| E.text <| "Wrong Attempted moves: " ++ String.fromInt wrongMoves ]
-        , displayTimer timer
-        ]
+
+
+title : Element Msg
+title =
+    E.el [ E.width E.fill ] <| E.el St.heading <| E.text "A Knight's Tale"
+
+
+explanation : Element Msg
+explanation =
+    E.paragraph St.text <| [ E.text "Can you take the knight, starting from the h8 square and proceeding Right to Left and Top to Bottom, all the way to the a1 square, while avoiding all the squares attacked by the enemy Queen stationed at d5?" ]
+
+
+startButton : Element Msg
+startButton =
+    Input.button St.startButton { onPress = Just <| StartPressed, label = E.el [] <| E.text "START" }
+
+
+resetButton : Element Msg
+resetButton =
+    Input.button St.resetButton { onPress = Just ResetGame, label = E.el [] <| E.text "RESET" }
 
 
 board : Model -> List (Element Msg)
@@ -227,9 +265,6 @@ box file rank { knight, knightSelected, currentTarget } =
         boxColor =
             getBoxColor file rank
 
-        knightClickEvent =
-            [ Ev.onClick <| ToggleKnightSelect file rank ]
-
         knightStyles =
             case knightSelected of
                 Just _ ->
@@ -241,7 +276,7 @@ box file rank { knight, knightSelected, currentTarget } =
         knightImg =
             if file == knight.file && rank == knight.rank then
                 E.image
-                    (knightStyles ++ knightClickEvent)
+                    knightStyles
                     { src = knightFilePath, description = "Knight" }
 
             else

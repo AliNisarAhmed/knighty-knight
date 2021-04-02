@@ -8,9 +8,18 @@
 	</head>
 
 	<body>
-		<main></main>
-		<script>
+		<script type="text/javascript">
 			var app = Elm.Main.init({ node: document.querySelector('main') });
+
+			app.ports.playSound.subscribe(function () {
+				const audioElement = document.getElementById('audio');
+				audioElement.currentTime = 0;
+				audioElement.play();
+			});
 		</script>
+
+		<audio id="audio" preload="auto">
+			<source src="assets/Move.mp3" type="audio/mpeg" />
+		</audio>
 	</body>
 </html>

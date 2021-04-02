@@ -332,6 +332,7 @@ validSequence =
     , ( A, Four )
     , ( H, Three )
     , ( G, Three )
+    , ( C, Three )
     , ( A, Three )
     , ( H, Two )
     , ( F, Two )

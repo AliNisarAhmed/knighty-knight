@@ -57,11 +57,6 @@ bgColor =
     E.rgb255 70 130 180
 
 
-legalMoveCircleColor : Color
-legalMoveCircleColor =
-    E.rgba255 0 0 0 0.6
-
-
 legalMoveCircleColorLight : Color
 legalMoveCircleColorLight =
     E.rgba255 0 0 0 0.23
@@ -77,10 +72,32 @@ knightColor =
     E.rgb255 82 27 59
 
 
+knightShadow : Color
+knightShadow =
+    E.rgba255 0 0 0 0.6
+
+
+white : Color
+white =
+    E.rgb 1 1 1
+
+
+black : Color
+black =
+    E.rgb 0 0 0
+
+
+red : Color
+red =
+    E.rgba255 150 11 11 0.8
+
+
 
 ---- STYLES ----
--- debug =
--- E.explain Debug.todo
+
+
+debug =
+    E.explain Debug.todo
 
 
 center : List (Attribute msg)
@@ -102,9 +119,9 @@ content : List (Attribute msg)
 content =
     [ E.centerX
     , E.centerY
-    , E.width <| (E.fill |> E.maximum 1400 |> E.minimum 400)
-    , E.height E.fill
-    , E.paddingXY 20 20
+    , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 400)
+    , E.height <| (E.px <| squareWidth * 8)
+    , E.spaceEvenly
     ]
 
 
@@ -112,7 +129,41 @@ mainContent : List (Attribute msg)
 mainContent =
     [ E.width <| E.fillPortion 3
     , E.height E.fill
+    , E.paddingEach { top = 0, left = 0, right = 0, bottom = 30 }
     ]
+
+
+button : List (Attribute msg)
+button =
+    [ E.paddingXY 120 20
+    , B.color <| E.rgb255 53 117 35
+    , E.centerX
+    , Border.rounded 20
+    , Font.size 24
+    , Font.letterSpacing 1.5
+    , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
+    ]
+
+
+startButton : List (Attribute msg)
+startButton =
+    button
+        ++ [ Font.color <| E.rgba 1 1 1 0.8
+           , B.color <| E.rgb255 53 117 35
+           , E.alignBottom
+           , E.centerX
+           ]
+
+
+resetButton : List (Attribute msg)
+resetButton =
+    button
+        ++ [ Font.color white
+           , B.color red
+           , Border.color red
+           , Border.width 1
+           , E.alignBottom
+           ]
 
 
 heading : List (Attribute msg)
@@ -120,7 +171,18 @@ heading =
     [ Font.color knightColor
     , Font.size 60
     , Font.bold
-    , E.width E.fill
+    , E.centerX
+    ]
+
+
+text : List (Attribute msg)
+text =
+    [ E.spacing 7
+    , E.width <| (E.fill |> E.maximum 500)
+    , E.centerY
+    , E.centerX
+    , E.paddingXY 0 20
+    , Font.justify
     ]
 
 
@@ -160,7 +222,6 @@ knight =
     , E.centerY
     , E.width <| E.px knightWidth
     , E.height <| E.px knightWidth
-    , E.pointer
     ]
 
 
@@ -175,7 +236,7 @@ selectedKnight =
         { offset = ( 0, 0 )
         , size = 0.1
         , blur = 40
-        , color = legalMoveCircleColor
+        , color = knightShadow
         }
     , B.color legalMoveCircleColorLight
     , Border.rounded 20
@@ -193,7 +254,7 @@ queen =
 
 legalMoveCircle : List (Attribute msg)
 legalMoveCircle =
-    [ B.color legalMoveCircleColor
+    [ B.color legalMoveCircleColorLight
     , E.width <| E.px legalMoveCircleWidth
     , E.height <| E.px legalMoveCircleWidth
     , E.centerX
