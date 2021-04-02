@@ -1,11 +1,10 @@
 port module Main exposing (main)
 
+import Array exposing (Array)
 import Browser exposing (Document)
 import Css exposing (..)
 import Element as E exposing (Color, Element)
-import Element.Events as Ev
 import Element.Input as Input
-import Maybe exposing (Maybe(..))
 import RankNFiles exposing (..)
 import Styles as St
 import Time
@@ -68,6 +67,7 @@ type alias Model =
     , wrongMoves : Int
     , gameState : GameState
     , timer : Maybe Int
+    , validMoves : Array ( File, Rank )
     }
 
 
@@ -80,6 +80,7 @@ initModel =
     , wrongMoves = 0
     , gameState = NotStarted
     , timer = Nothing
+    , validMoves = Array.fromList validSequence
     }
 
 
@@ -137,17 +138,8 @@ update msg model =
 
             else
                 let
-                    newTarget =
-                        if model.currentTarget == ( file, rank ) then
-                            case getNextTarget ( file, rank ) of
-                                Just nt ->
-                                    nt
-
-                                Nothing ->
-                                    model.currentTarget
-
-                        else
-                            model.currentTarget
+                    nextTarget =
+                        getNextTarget2 ( file, rank ) model.validMoves
 
                     newGameState =
                         case model.gameState of
@@ -157,15 +149,37 @@ update msg model =
                             _ ->
                                 Started
                 in
-                ( { model
-                    | knight = { rank = rank, file = file }
-                    , knightSelected = Just <| getLegalMoves file rank
-                    , currentTarget = newTarget
-                    , totalMoves = model.totalMoves + 1
-                    , gameState = newGameState
-                  }
-                , playSound ()
-                )
+                case nextTarget of
+                    NextTarget newTarget remainingValidMoves ->
+                        ( { model
+                            | knight = { rank = rank, file = file }
+                            , knightSelected = Just <| getLegalMoves file rank
+                            , currentTarget = newTarget
+                            , totalMoves = model.totalMoves + 1
+                            , validMoves = remainingValidMoves
+                            , gameState = newGameState
+                          }
+                        , playSound ()
+                        )
+
+                    NotHit ->
+                        ( { model
+                            | knight = { rank = rank, file = file }
+                            , knightSelected = Just <| getLegalMoves file rank
+                            , totalMoves = model.totalMoves + 1
+                            , gameState = newGameState
+                          }
+                        , playSound ()
+                        )
+
+                    Win ->
+                        ( { model
+                            | gameState = Finished
+                            , knight = { rank = rank, file = file }
+                            , knightSelected = Nothing
+                          }
+                        , Cmd.none
+                        )
 
         Tick _ ->
             let
@@ -204,6 +218,10 @@ view model =
 
 mainContent : Model -> List (Element Msg)
 mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
+    let
+        accuracy =
+            (totalMoves - wrongMoves) * 100 // totalMoves
+    in
     case gameState of
         NotStarted ->
             [ title
@@ -211,30 +229,57 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
             , startButton
             ]
 
+        Finished ->
+            [ title
+            , E.paragraph [] [ E.text "Congratulations, you did it..." ]
+            , E.text <| "It took you: "
+            , E.paragraph []
+                [ displayTimer timer ]
+            , E.paragraph []
+                [ E.el [] <| E.text <| String.fromInt totalMoves
+                , E.text " total moves, "
+                ]
+            , E.paragraph []
+                [ E.text " with an accuracy of "
+                , E.el [] <| E.text <| String.fromInt accuracy ++ "%"
+                ]
+            , restartButton
+            ]
+
         _ ->
             [ title
-            , E.row [] <|
-                [ E.textColumn
-                    []
-                    [ E.el [] <| E.text <| squareToString currentTarget ]
+            , E.el St.targetSquareName <| E.text <| squareToString currentTarget
+            , E.column St.stats <|
+                [ displayTimer timer
+                , E.el St.wrongMovesNumber <| E.text <| String.fromInt wrongMoves
+                , E.paragraph St.wrongMovesText <|
+                    [ E.text <| "Wrong attempted moves"
+                    ]
+                , E.el St.totalMovesNumber <| E.text <| String.fromInt totalMoves
+                , E.el St.totalMovesText <|
+                    E.text <|
+                        "Total moves"
                 ]
-            , E.row [] <|
-                [ E.el [] <| E.text <| "Total Moves: " ++ String.fromInt totalMoves ]
-            , E.row [] <|
-                [ E.el [] <| E.text <| "Wrong Attempted moves: " ++ String.fromInt wrongMoves ]
-            , displayTimer timer
             , resetButton
             ]
 
 
 title : Element Msg
 title =
-    E.el [ E.width E.fill ] <| E.el St.heading <| E.text "A Knight's Tale"
+    E.el [ E.width E.fill ] <| E.el St.heading <| E.text "A KNIGHT'S JOURNEY"
 
 
 explanation : Element Msg
 explanation =
-    E.paragraph St.text <| [ E.text "Can you take the knight, starting from the h8 square and proceeding Right to Left and Top to Bottom, all the way to the a1 square, while avoiding all the squares attacked by the enemy Queen stationed at d5?" ]
+    E.paragraph St.text <|
+        [ E.text "Can you take the knight at "
+        , E.el St.knightStartingSquareText <| E.text "h8"
+        , E.text " square, visiting all the squares one by one (left to right, top to bottom), all the way to the "
+        , E.el St.targetSquareText <| E.text "a1"
+        , E.text " square, while avoiding all the squares attacked by the enemy "
+        , E.el St.queenSquareText <| E.text "Queen"
+        , E.text " stationed at d5?"
+        ]
 
 
 startButton : Element Msg
@@ -247,20 +292,34 @@ resetButton =
     Input.button St.resetButton { onPress = Just ResetGame, label = E.el [] <| E.text "RESET" }
 
 
+restartButton : Element Msg
+restartButton =
+    Input.button St.startButton { onPress = Just ResetGame, label = E.el [] <| E.text "Play Again?" }
+
+
 board : Model -> List (Element Msg)
 board model =
+    let
+        drawnBox =
+            case model.gameState of
+                NotStarted ->
+                    startingBox
+
+                _ ->
+                    box
+    in
     List.map
         (\rank ->
             E.row [] <|
                 rankLabel rank
-                    :: List.map (\file -> box file rank model) files
+                    :: List.map (\file -> drawnBox file rank model) files
         )
         ranks
         ++ fileLabelRow files
 
 
 box : File -> Rank -> Model -> Element Msg
-box file rank { knight, knightSelected, currentTarget } =
+box file rank { knight, knightSelected, currentTarget, gameState } =
     let
         boxColor =
             getBoxColor file rank
@@ -312,7 +371,7 @@ box file rank { knight, knightSelected, currentTarget } =
                 E.none
 
         targetSquare =
-            if ( file, rank ) == currentTarget then
+            if ( file, rank ) == currentTarget && gameState /= Finished then
                 E.el St.targetSquare E.none
 
             else
@@ -328,6 +387,62 @@ box file rank { knight, knightSelected, currentTarget } =
 
         Illegal ->
             E.row (St.square boxColor) <| [ knightImg, queenImg, targetSquare ]
+
+
+startingBox : File -> Rank -> Model -> Element Msg
+startingBox file rank { knight, knightSelected } =
+    let
+        isAttackedByQueen =
+            if ( file, rank ) /= ( D, Five ) && List.member ( file, rank ) queenMoves then
+                True
+
+            else
+                False
+
+        attackedByQueenSquare =
+            if isAttackedByQueen then
+                E.row St.attackedByQueen <| [ E.el St.x1 E.none ]
+
+            else
+                E.none
+
+        boxColor =
+            getBoxColor file rank
+
+        knightStyles =
+            case knightSelected of
+                Just _ ->
+                    St.selectedKnight
+
+                Nothing ->
+                    St.knight
+
+        knightImg =
+            if file == knight.file && rank == knight.rank then
+                E.image
+                    knightStyles
+                    { src = knightFilePath, description = "Knight" }
+
+            else
+                E.none
+
+        queenImg =
+            if file == D && rank == Five then
+                E.image
+                    St.queen
+                    { src = queenFilePath, description = "Queen" }
+
+            else
+                E.none
+
+        targetSquare =
+            if ( file, rank ) == ( A, One ) then
+                E.el St.targetSquare E.none
+
+            else
+                E.none
+    in
+    E.row (St.square boxColor) <| [ knightImg, queenImg, targetSquare, attackedByQueenSquare ]
 
 
 legalMoveCircle : Element Msg
@@ -354,10 +469,10 @@ displayTimer : Maybe Int -> Element msg
 displayTimer timer =
     case timer of
         Nothing ->
-            E.none
+            E.el St.timer <| E.text <| showTime 0
 
         Just secs ->
-            E.el [] <| E.text <| "Time elapsed: " ++ showTime secs
+            E.el St.timer <| E.text <| showTime secs
 
 
 showTime : Int -> String
@@ -368,8 +483,18 @@ showTime secs =
 
         minutes =
             secs // 60
+
+        secondsString =
+            seconds
+                |> String.fromInt
+                |> String.pad 2 '0'
+
+        minutesString =
+            minutes
+                |> String.fromInt
+                |> String.pad 2 '0'
     in
-    String.fromInt minutes ++ ":" ++ String.fromInt seconds
+    minutesString ++ ":" ++ secondsString
 
 
 getBoxColor : File -> Rank -> Color

@@ -1,5 +1,6 @@
 module RankNFiles exposing (..)
 
+import Array exposing (Array)
 import List.Extra exposing (dropWhile)
 import Maybe.Extra exposing (values)
 
@@ -29,6 +30,12 @@ type Rank
     | Six
     | Seven
     | Eight
+
+
+type NextTarget
+    = NextTarget ( File, Rank ) (Array ( File, Rank ))
+    | NotHit
+    | Win
 
 
 type alias LegalMoves =
@@ -276,11 +283,43 @@ getNextTarget fr =
         |> List.head
 
 
+getNextTarget2 : ( File, Rank ) -> Array ( File, Rank ) -> NextTarget
+getNextTarget2 ( file, rank ) array =
+    let
+        current =
+            Array.get 0 array
+
+        next =
+            Array.get 1 array
+
+        arrayLength =
+            Array.length array
+    in
+    case ( current, next ) of
+        ( Just c, Just n ) ->
+            if ( file, rank ) == c then
+                NextTarget n (Array.slice 1 arrayLength array)
+
+            else
+                NotHit
+
+        ( Just c, Nothing ) ->
+            if ( file, rank ) == c then
+                Win
+
+            else
+                NotHit
+
+        _ ->
+            NotHit
+
+
 queenMoves : List ( File, Rank )
 queenMoves =
-    [ ( D, Six )
+    [ ( D, Eight )
     , ( D, Seven )
-    , ( D, Eight )
+    , ( D, Six )
+    , ( D, Five )
     , ( D, Four )
     , ( D, Three )
     , ( D, Two )
@@ -310,39 +349,39 @@ queenMoves =
 
 validSequence : List ( File, Rank )
 validSequence =
-    [ ( H, Eight )
-    , ( F, Eight )
-    , ( E, Eight )
-    , ( C, Eight )
-    , ( B, Eight )
-    , ( H, Seven )
-    , ( G, Seven )
-    , ( E, Seven )
-    , ( C, Seven )
-    , ( A, Seven )
-    , ( H, Six )
-    , ( G, Six )
-    , ( F, Six )
-    , ( B, Six )
-    , ( A, Six )
-    , ( H, Four )
-    , ( G, Four )
-    , ( F, Four )
-    , ( B, Four )
-    , ( A, Four )
-    , ( H, Three )
-    , ( G, Three )
-    , ( C, Three )
-    , ( A, Three )
-    , ( H, Two )
-    , ( F, Two )
-    , ( E, Two )
-    , ( C, Two )
-    , ( B, Two )
-    , ( G, One )
-    , ( F, One )
-    , ( E, One )
-    , ( C, One )
-    , ( B, One )
+    [ ( F, Eight )
+
+    -- , ( E, Eight )
+    -- , ( C, Eight )
+    -- , ( B, Eight )
+    -- , ( H, Seven )
+    -- , ( G, Seven )
+    -- , ( E, Seven )
+    -- , ( C, Seven )
+    -- , ( A, Seven )
+    -- , ( H, Six )
+    -- , ( G, Six )
+    -- , ( F, Six )
+    -- , ( B, Six )
+    -- , ( A, Six )
+    -- , ( H, Four )
+    -- , ( G, Four )
+    -- , ( F, Four )
+    -- , ( B, Four )
+    -- , ( A, Four )
+    -- , ( H, Three )
+    -- , ( G, Three )
+    -- , ( C, Three )
+    -- , ( A, Three )
+    -- , ( H, Two )
+    -- , ( F, Two )
+    -- , ( E, Two )
+    -- , ( C, Two )
+    -- , ( B, Two )
+    -- , ( G, One )
+    -- , ( F, One )
+    -- , ( E, One )
+    -- , ( C, One )
+    -- , ( B, One )
     , ( A, One )
     ]
