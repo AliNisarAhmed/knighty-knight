@@ -231,17 +231,23 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
 
         Finished ->
             [ title
-            , E.paragraph [] [ E.text "Congratulations, you did it..." ]
-            , E.text <| "It took you: "
-            , E.paragraph []
-                [ displayTimer timer ]
-            , E.paragraph []
-                [ E.el [] <| E.text <| String.fromInt totalMoves
-                , E.text " total moves, "
-                ]
-            , E.paragraph []
-                [ E.text " with an accuracy of "
-                , E.el [] <| E.text <| String.fromInt accuracy ++ "%"
+            , E.column St.finishedStats <|
+                [ E.paragraph St.congrats [ E.text "Congratulations, you did it!" ]
+                , E.el St.took <| E.text "It took you: "
+                , E.column St.statList <|
+                    [ E.paragraph []
+                        [ E.text "- ", displayFinalTimer timer, E.text "," ]
+                    , E.paragraph []
+                        [ E.text "- "
+                        , E.el [] <| E.text <| String.fromInt totalMoves
+                        , E.text " total moves, "
+                        ]
+                    , E.paragraph []
+                        [ E.text "- "
+                        , E.text " with an accuracy of "
+                        , E.el [] <| E.text <| String.fromInt accuracy ++ "%"
+                        ]
+                    ]
                 ]
             , restartButton
             ]
@@ -475,14 +481,67 @@ displayTimer timer =
             E.el St.timer <| E.text <| showTime secs
 
 
+displayFinalTimer : Maybe Int -> Element Msg
+displayFinalTimer timer =
+    case timer of
+        Nothing ->
+            E.none
+
+        Just secs ->
+            let
+                minutes =
+                    getMinutes secs
+
+                seconds =
+                    getSeconds secs
+            in
+            if minutes == 0 then
+                E.paragraph []
+                    [ E.el [] <| E.text <| String.fromInt seconds
+                    , E.text <| "seconds"
+                    ]
+
+            else if seconds == 0 then
+                E.paragraph []
+                    [ E.el [] <| E.text <| String.fromInt minutes
+                    , E.text "minutes "
+                    ]
+
+            else if minutes == 1 then
+                E.paragraph []
+                    [ E.el [] <| E.text "1"
+                    , E.text "minute "
+                    , E.el [] <| E.text <| String.fromInt seconds
+                    , E.text <| "seconds"
+                    ]
+
+            else
+                E.paragraph []
+                    [ E.el [] <| E.text <| String.fromInt minutes
+                    , E.text "minutes "
+                    , E.el [] <| E.text <| String.fromInt seconds
+                    , E.text <| "seconds"
+                    ]
+
+
+getSeconds : Int -> Int
+getSeconds =
+    modBy 60
+
+
+getMinutes : Int -> Int
+getMinutes s =
+    s // 60
+
+
 showTime : Int -> String
 showTime secs =
     let
         seconds =
-            modBy 60 secs
+            getSeconds secs
 
         minutes =
-            secs // 60
+            getMinutes secs
 
         secondsString =
             seconds

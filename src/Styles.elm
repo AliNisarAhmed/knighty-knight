@@ -117,6 +117,11 @@ lightRed =
     E.rgba255 255 134 134 0.8
 
 
+goldenRod : Color
+goldenRod =
+    E.rgb255 218 165 32
+
+
 
 ---- STYLES ----
 
@@ -170,6 +175,22 @@ stats =
     , B.color knightColor
     , Border.rounded 20
     , E.paddingXY 20 40
+    ]
+
+
+finishedStats =
+    [ E.paddingEach { top = 40, left = 40, right = 40, bottom = 30 }
+    , B.color goldenRod
+    , E.centerY
+    , E.centerX
+    , Border.rounded 20
+    , Font.color navyBlue
+    ]
+
+
+statList =
+    [ E.paddingXY 30 0
+    , E.spacingXY 0 20
     ]
 
 
@@ -399,7 +420,7 @@ totalMovesText =
     [ E.centerX
     , Font.color targetColor
     , Font.size 20
-    , E.paddingXY 0 5
+    , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
     ]
 
 
@@ -408,14 +429,14 @@ wrongMovesText =
     , E.centerY
     , Font.color lightRed
     , Font.size 20
-    , E.paddingXY 0 5
+    , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
     ]
 
 
 totalMovesNumber =
     [ Font.size 40
     , Font.color white
-    , E.paddingXY 0 20
+    , E.paddingEach { top = 40, left = 0, right = 0, bottom = 5 }
     , E.centerX
     ]
 
@@ -423,7 +444,7 @@ totalMovesNumber =
 wrongMovesNumber =
     [ Font.size 40
     , Font.color white
-    , E.paddingXY 0 20
+    , E.paddingEach { top = 40, left = 0, right = 0, bottom = 5 }
     , E.centerX
     ]
 
@@ -433,3 +454,14 @@ timer =
     , Font.color white
     , E.centerX
     ]
+
+
+congrats =
+    [ Font.size 30
+    , Font.color navyBlue
+    , E.paddingEach { top = 0, bottom = 30, left = 0, right = 0 }
+    ]
+
+
+took =
+    [ E.paddingEach { top = 0, bottom = 30, left = 0, right = 0 } ]
