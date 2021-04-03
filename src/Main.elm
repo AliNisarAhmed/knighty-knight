@@ -5,8 +5,10 @@ import Browser exposing (Document)
 import Css exposing (..)
 import Element as E exposing (Color, Element)
 import Element.Input as Input
+import Process
 import RankNFiles exposing (..)
 import Styles as St
+import Task
 import Time
 
 
@@ -68,6 +70,7 @@ type alias Model =
     , gameState : GameState
     , timer : Maybe Int
     , validMoves : Array ( File, Rank )
+    , wrongMoveSquare : Maybe ( File, Rank )
     }
 
 
@@ -81,6 +84,7 @@ initModel =
     , gameState = NotStarted
     , timer = Nothing
     , validMoves = Array.fromList validSequence
+    , wrongMoveSquare = Nothing
     }
 
 
@@ -90,6 +94,7 @@ type Msg
     | Tick Time.Posix
     | StartPressed
     | ResetGame
+    | HideWrongMove ()
     | NoOp
 
 
@@ -103,12 +108,20 @@ subscriptions model =
             Sub.none
 
 
+sleep : Task.Task x ()
+sleep =
+    Process.sleep 200
+
+
 port playSound : () -> Cmd msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        HideWrongMove _ ->
+            ( { model | wrongMoveSquare = Nothing }, Cmd.none )
+
         StartPressed ->
             ( { model
                 | knightSelected = Just <| getLegalMoves H Eight
@@ -134,7 +147,9 @@ update msg model =
                     List.member ( file, rank ) queenMoves
             in
             if isAttackedByQueen then
-                ( { model | wrongMoves = model.wrongMoves + 1 }, Cmd.none )
+                ( { model | wrongMoves = model.wrongMoves + 1, wrongMoveSquare = Just ( file, rank ) }
+                , Task.perform HideWrongMove sleep
+                )
 
             else
                 let
@@ -325,7 +340,7 @@ board model =
 
 
 box : File -> Rank -> Model -> Element Msg
-box file rank { knight, knightSelected, currentTarget, gameState } =
+box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquare } =
     let
         boxColor =
             getBoxColor file rank
@@ -382,14 +397,36 @@ box file rank { knight, knightSelected, currentTarget, gameState } =
 
             else
                 E.none
-    in
-    case move of
-        Legal ->
+
+        knightMoveIndicator =
             Input.button
                 (St.square boxColor)
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare legalMoveCircle) [ queenImg, targetSquare ]
                 }
+
+        illegalMoveIndicator =
+            E.row St.attackedByQueen <| [ E.el St.x1 E.none ]
+
+        illegalMoveSquare =
+            Input.button
+                (St.square boxColor)
+                { onPress = moveHandler
+                , label = E.row (St.legalMoveSquare illegalMoveIndicator) [ queenImg, targetSquare ]
+                }
+    in
+    case move of
+        Legal ->
+            case wrongMoveSquare of
+                Just ( f, r ) ->
+                    if ( f, r ) == ( file, rank ) then
+                        illegalMoveSquare
+
+                    else
+                        knightMoveIndicator
+
+                Nothing ->
+                    knightMoveIndicator
 
         Illegal ->
             E.row (St.square boxColor) <| [ knightImg, queenImg, targetSquare ]
