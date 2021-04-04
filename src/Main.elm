@@ -2,8 +2,9 @@ port module Main exposing (main)
 
 import Array exposing (Array)
 import Browser exposing (Document)
+import Browser.Events exposing (onResize)
 import Css exposing (..)
-import Element as E exposing (Color, Element)
+import Element as E exposing (Color, Device, DeviceClass(..), Element, Orientation(..))
 import Element.Input as Input
 import Process
 import RankNFiles exposing (..)
@@ -40,15 +41,19 @@ knightStartingPosition =
     }
 
 
-init : () -> () -> () -> ( Model, Cmd Msg )
-init _ _ _ =
-    ( initModel, Cmd.none )
+init : Flags -> ( Model, Cmd Msg )
+init { height, width } =
+    let
+        device =
+            E.classifyDevice { width = width, height = height }
+    in
+    ( { initModel | device = device }, Cmd.none )
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.document
-        { init = always ( initModel, Cmd.none )
+        { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -61,6 +66,12 @@ main =
 -------------------------------------------------------
 
 
+type alias Flags =
+    { width : Int
+    , height : Int
+    }
+
+
 type alias Model =
     { knight : Knight
     , knightSelected : Maybe LegalMoves
@@ -71,6 +82,7 @@ type alias Model =
     , timer : Maybe Int
     , validMoves : Array ( File, Rank )
     , wrongMoveSquare : Maybe ( File, Rank )
+    , device : Device
     }
 
 
@@ -85,6 +97,7 @@ initModel =
     , timer = Nothing
     , validMoves = Array.fromList validSequence
     , wrongMoveSquare = Nothing
+    , device = { class = BigDesktop, orientation = Landscape }
     }
 
 
@@ -95,6 +108,7 @@ type Msg
     | StartPressed
     | ResetGame
     | HideWrongMove ()
+    | GotNewWidth Int Int
     | NoOp
 
 
@@ -102,7 +116,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.gameState of
         Started ->
-            Time.every 1000 Tick
+            Sub.batch [ Time.every 1000 Tick, onResize GotNewWidth ]
 
         _ ->
             Sub.none
@@ -119,6 +133,9 @@ port playSound : () -> Cmd msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotNewWidth w h ->
+            ( { model | device = E.classifyDevice { width = w, height = h } }, Cmd.none )
+
         HideWrongMove _ ->
             ( { model | wrongMoveSquare = Nothing }, Cmd.none )
 
