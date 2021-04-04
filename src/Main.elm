@@ -119,7 +119,7 @@ subscriptions model =
             Sub.batch [ Time.every 1000 Tick, onResize GotNewWidth ]
 
         _ ->
-            Sub.none
+            onResize GotNewWidth
 
 
 sleep : Task.Task x ()
@@ -148,7 +148,7 @@ update msg model =
             )
 
         ResetGame ->
-            ( initModel, Cmd.none )
+            ( { initModel | device = model.device }, Cmd.none )
 
         ToggleKnightSelect file rank ->
             case model.knightSelected of
@@ -240,29 +240,29 @@ view model =
     { title = "Knighty Knight"
     , body =
         [ E.layout St.layout <|
-            E.row St.content <|
-                [ E.column St.mainContent <| mainContent model
-                , E.column St.boardColumn <| board model
+            E.row (St.content model.device) <|
+                [ E.column (St.mainContent model.device) <| mainContent model
+                , E.column (St.boardColumn model.device) <| board model
                 ]
         ]
     }
 
 
 mainContent : Model -> List (Element Msg)
-mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
+mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } =
     let
         accuracy =
             (totalMoves - wrongMoves) * 100 // totalMoves
     in
     case gameState of
         NotStarted ->
-            [ title
-            , explanation
+            [ title device
+            , explanation device
             , startButton
             ]
 
         Finished ->
-            [ title
+            [ title device
             , E.column St.finishedStats <|
                 [ E.paragraph St.congrats [ E.text "Congratulations, you did it!" ]
                 , E.el St.took <| E.text "It took you: "
@@ -285,7 +285,7 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
             ]
 
         _ ->
-            [ title
+            [ title device
             , E.el St.targetSquareName <| E.text <| squareToString currentTarget
             , E.column St.stats <|
                 [ displayTimer timer
@@ -302,14 +302,14 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
             ]
 
 
-title : Element Msg
-title =
-    E.el [ E.width E.fill ] <| E.el St.heading <| E.text "A KNIGHT'S JOURNEY"
+title : Device -> Element Msg
+title device =
+    E.el [ E.width E.fill ] <| E.el (St.heading device) <| E.text "A KNIGHT'S JOURNEY"
 
 
-explanation : Element Msg
-explanation =
-    E.paragraph St.text <|
+explanation : Device -> Element Msg
+explanation device =
+    E.paragraph (St.text device) <|
         [ E.text "Can you take the knight at "
         , E.el St.knightStartingSquareText <| E.text "h8"
         , E.text " square, visiting all the squares one by one (left to right, top to bottom), all the way to the "
@@ -353,11 +353,11 @@ board model =
                     :: List.map (\file -> drawnBox file rank model) files
         )
         ranks
-        ++ fileLabelRow files
+        ++ fileLabelRow model.device files
 
 
 box : File -> Rank -> Model -> Element Msg
-box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquare } =
+box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquare, device } =
     let
         boxColor =
             getBoxColor file rank
@@ -402,7 +402,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
         queenImg =
             if file == D && rank == Five then
                 E.image
-                    St.queen
+                    (St.queen device)
                     { src = queenFilePath, description = "Queen" }
 
             else
@@ -410,14 +410,14 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
 
         targetSquare =
             if ( file, rank ) == currentTarget && gameState /= Finished then
-                E.el St.targetSquare E.none
+                E.el (St.targetSquare device) E.none
 
             else
                 E.none
 
         knightMoveIndicator =
             Input.button
-                (St.square boxColor)
+                (St.square boxColor device)
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare legalMoveCircle) [ queenImg, targetSquare ]
                 }
@@ -427,7 +427,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
 
         illegalMoveSquare =
             Input.button
-                (St.square boxColor)
+                (St.square boxColor device)
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare illegalMoveIndicator) [ queenImg, targetSquare ]
                 }
@@ -446,11 +446,11 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
                     knightMoveIndicator
 
         Illegal ->
-            E.row (St.square boxColor) <| [ knightImg, queenImg, targetSquare ]
+            E.row (St.square boxColor device) <| [ knightImg, queenImg, targetSquare ]
 
 
 startingBox : File -> Rank -> Model -> Element Msg
-startingBox file rank { knight, knightSelected } =
+startingBox file rank { knight, knightSelected, device } =
     let
         isAttackedByQueen =
             if ( file, rank ) /= ( D, Five ) && List.member ( file, rank ) queenMoves then
@@ -489,7 +489,7 @@ startingBox file rank { knight, knightSelected } =
         queenImg =
             if file == D && rank == Five then
                 E.image
-                    St.queen
+                    (St.queen device)
                     { src = queenFilePath, description = "Queen" }
 
             else
@@ -497,12 +497,12 @@ startingBox file rank { knight, knightSelected } =
 
         targetSquare =
             if ( file, rank ) == ( A, One ) then
-                E.el St.targetSquare E.none
+                E.el (St.targetSquare device) E.none
 
             else
                 E.none
     in
-    E.row (St.square boxColor) <| [ knightImg, queenImg, targetSquare, attackedByQueenSquare ]
+    E.row (St.square boxColor device) <| [ knightImg, queenImg, targetSquare, attackedByQueenSquare ]
 
 
 legalMoveCircle : Element Msg
@@ -515,14 +515,14 @@ rankLabel rank =
     E.el St.rankLabelText (E.text <| rankToString rank)
 
 
-fileLabelRow : List File -> List (Element Msg)
-fileLabelRow files =
-    [ E.row [] <| E.el St.blankRankLabel E.none :: List.map fileLabel files ]
+fileLabelRow : Device -> List File -> List (Element Msg)
+fileLabelRow device files =
+    [ E.row [] <| E.el St.blankRankLabel E.none :: List.map (fileLabel device) files ]
 
 
-fileLabel : File -> Element Msg
-fileLabel file =
-    E.el St.fileLabelText (E.el St.center <| E.text <| fileToString file)
+fileLabel : Device -> File -> Element Msg
+fileLabel device file =
+    E.el (St.fileLabelText device) (E.el St.center <| E.text <| fileToString file)
 
 
 displayTimer : Maybe Int -> Element msg
