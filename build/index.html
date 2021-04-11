@@ -14,7 +14,13 @@
 
 	<body>
 		<script type="text/javascript">
-			var app = Elm.Main.init({ node: document.querySelector('main') });
+			var app = Elm.Main.init({
+				node: document.querySelector('main'),
+				flags: {
+					height: window.innerHeight,
+					width: window.innerWidth,
+				},
+			});
 
 			app.ports.playSound.subscribe(function () {
 				const audioElement = document.getElementById('audio');
