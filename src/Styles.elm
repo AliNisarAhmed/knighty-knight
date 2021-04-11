@@ -143,10 +143,8 @@ goldenRod =
 
 
 ---- STYLES ----
-
-
-debug =
-    E.explain Debug.todo
+-- debug =
+--     E.explain Debug.todo
 
 
 center : List (Attribute msg)
