@@ -2,8 +2,9 @@ port module Main exposing (main)
 
 import Array exposing (Array)
 import Browser exposing (Document)
+import Browser.Events exposing (onResize)
 import Css exposing (..)
-import Element as E exposing (Color, Element)
+import Element as E exposing (Color, Device, DeviceClass(..), Element, Orientation(..))
 import Element.Input as Input
 import Process
 import RankNFiles exposing (..)
@@ -40,15 +41,19 @@ knightStartingPosition =
     }
 
 
-init : () -> () -> () -> ( Model, Cmd Msg )
-init _ _ _ =
-    ( initModel, Cmd.none )
+init : Flags -> ( Model, Cmd Msg )
+init { height, width } =
+    let
+        device =
+            E.classifyDevice { width = width, height = height }
+    in
+    ( { initModel | device = device }, Cmd.none )
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.document
-        { init = always ( initModel, Cmd.none )
+        { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -61,6 +66,12 @@ main =
 -------------------------------------------------------
 
 
+type alias Flags =
+    { width : Int
+    , height : Int
+    }
+
+
 type alias Model =
     { knight : Knight
     , knightSelected : Maybe LegalMoves
@@ -71,6 +82,7 @@ type alias Model =
     , timer : Maybe Int
     , validMoves : Array ( File, Rank )
     , wrongMoveSquare : Maybe ( File, Rank )
+    , device : Device
     }
 
 
@@ -85,6 +97,7 @@ initModel =
     , timer = Nothing
     , validMoves = Array.fromList validSequence
     , wrongMoveSquare = Nothing
+    , device = { class = BigDesktop, orientation = Landscape }
     }
 
 
@@ -95,6 +108,7 @@ type Msg
     | StartPressed
     | ResetGame
     | HideWrongMove ()
+    | GotNewWidth Int Int
     | NoOp
 
 
@@ -102,10 +116,10 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.gameState of
         Started ->
-            Time.every 1000 Tick
+            Sub.batch [ Time.every 1000 Tick, onResize GotNewWidth ]
 
         _ ->
-            Sub.none
+            onResize GotNewWidth
 
 
 sleep : Task.Task x ()
@@ -119,6 +133,9 @@ port playSound : () -> Cmd msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotNewWidth w h ->
+            ( { model | device = E.classifyDevice { width = w, height = h } }, Cmd.none )
+
         HideWrongMove _ ->
             ( { model | wrongMoveSquare = Nothing }, Cmd.none )
 
@@ -131,7 +148,7 @@ update msg model =
             )
 
         ResetGame ->
-            ( initModel, Cmd.none )
+            ( { initModel | device = model.device }, Cmd.none )
 
         ToggleKnightSelect file rank ->
             case model.knightSelected of
@@ -220,32 +237,63 @@ update msg model =
 
 view : Model -> Document Msg
 view model =
-    { title = "Knighty Knight"
-    , body =
-        [ E.layout St.layout <|
-            E.row St.content <|
-                [ E.column St.mainContent <| mainContent model
-                , E.column St.boardColumn <| board model
+    let
+        mainContentSection =
+            case model.device.class of
+                Tablet ->
+                    E.row (St.mainContent model.device) <| mainContent model
+
+                _ ->
+                    E.column (St.mainContent model.device) <| mainContent model
+    in
+    case model.device.class of
+        Tablet ->
+            { title = "Knighty Knight"
+            , body =
+                [ E.layout St.layout <|
+                    E.column (St.content model.device) <|
+                        [ title model.device
+                        , E.column (St.boardColumn model.device) <| board model
+                        , mainContentSection
+                        ]
                 ]
-        ]
-    }
+            }
+
+        _ ->
+            { title = "Knighty Knight"
+            , body =
+                [ E.layout St.layout <|
+                    E.row (St.content model.device) <|
+                        [ mainContentSection
+                        , E.column (St.boardColumn model.device) <| board model
+                        ]
+                ]
+            }
 
 
 mainContent : Model -> List (Element Msg)
-mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
+mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } =
     let
         accuracy =
             (totalMoves - wrongMoves) * 100 // totalMoves
+
+        titleElement =
+            case device.class of
+                Tablet ->
+                    E.none
+
+                _ ->
+                    title device
     in
     case gameState of
         NotStarted ->
-            [ title
-            , explanation
-            , startButton
+            [ titleElement
+            , explanation device
+            , startButton device
             ]
 
         Finished ->
-            [ title
+            [ titleElement
             , E.column St.finishedStats <|
                 [ E.paragraph St.congrats [ E.text "Congratulations, you did it!" ]
                 , E.el St.took <| E.text "It took you: "
@@ -264,14 +312,14 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
                         ]
                     ]
                 ]
-            , restartButton
+            , restartButton device
             ]
 
         _ ->
-            [ title
-            , E.el St.targetSquareName <| E.text <| squareToString currentTarget
-            , E.column St.stats <|
-                [ displayTimer timer
+            [ title device
+            , E.el (St.targetSquareName device) <| E.text <| squareToString currentTarget
+            , E.column (St.stats device) <|
+                [ displayTimer timer device
                 , E.el St.wrongMovesNumber <| E.text <| String.fromInt wrongMoves
                 , E.paragraph St.wrongMovesText <|
                     [ E.text <| "Wrong attempted moves"
@@ -281,41 +329,41 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState } =
                     E.text <|
                         "Total moves"
                 ]
-            , resetButton
+            , resetButton device
             ]
 
 
-title : Element Msg
-title =
-    E.el [ E.width E.fill ] <| E.el St.heading <| E.text "A KNIGHT'S JOURNEY"
+title : Device -> Element Msg
+title device =
+    E.el [ E.width E.fill ] <| E.el (St.heading device) <| E.text "A KNIGHT'S JOURNEY"
 
 
-explanation : Element Msg
-explanation =
-    E.paragraph St.text <|
+explanation : Device -> Element Msg
+explanation device =
+    E.paragraph (St.text device) <|
         [ E.text "Can you take the knight at "
-        , E.el St.knightStartingSquareText <| E.text "h8"
+        , E.el (St.knightStartingSquareText device) <| E.text "h8"
         , E.text " square, visiting all the squares one by one (left to right, top to bottom), all the way to the "
-        , E.el St.targetSquareText <| E.text "a1"
+        , E.el (St.targetSquareText device) <| E.text "a1"
         , E.text " square, while avoiding all the squares attacked by the enemy "
-        , E.el St.queenSquareText <| E.text "Queen"
+        , E.el (St.queenSquareText device) <| E.text "Queen"
         , E.text " stationed at d5?"
         ]
 
 
-startButton : Element Msg
-startButton =
-    Input.button St.startButton { onPress = Just <| StartPressed, label = E.el [] <| E.text "START" }
+startButton : Device -> Element Msg
+startButton device =
+    Input.button (St.startButton device) { onPress = Just <| StartPressed, label = E.el [] <| E.text "START" }
 
 
-resetButton : Element Msg
-resetButton =
-    Input.button St.resetButton { onPress = Just ResetGame, label = E.el [] <| E.text "RESET" }
+resetButton : Device -> Element Msg
+resetButton device =
+    Input.button (St.resetButton device) { onPress = Just ResetGame, label = E.el [] <| E.text "RESET" }
 
 
-restartButton : Element Msg
-restartButton =
-    Input.button St.startButton { onPress = Just ResetGame, label = E.el [] <| E.text "Play Again?" }
+restartButton : Device -> Element Msg
+restartButton device =
+    Input.button (St.startButton device) { onPress = Just ResetGame, label = E.el [] <| E.text "Play Again?" }
 
 
 board : Model -> List (Element Msg)
@@ -336,11 +384,11 @@ board model =
                     :: List.map (\file -> drawnBox file rank model) files
         )
         ranks
-        ++ fileLabelRow files
+        ++ fileLabelRow model.device files
 
 
 box : File -> Rank -> Model -> Element Msg
-box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquare } =
+box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquare, device } =
     let
         boxColor =
             getBoxColor file rank
@@ -385,7 +433,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
         queenImg =
             if file == D && rank == Five then
                 E.image
-                    St.queen
+                    (St.queen device)
                     { src = queenFilePath, description = "Queen" }
 
             else
@@ -393,14 +441,14 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
 
         targetSquare =
             if ( file, rank ) == currentTarget && gameState /= Finished then
-                E.el St.targetSquare E.none
+                E.el (St.targetSquare device) E.none
 
             else
                 E.none
 
         knightMoveIndicator =
             Input.button
-                (St.square boxColor)
+                (St.square boxColor device)
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare legalMoveCircle) [ queenImg, targetSquare ]
                 }
@@ -410,7 +458,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
 
         illegalMoveSquare =
             Input.button
-                (St.square boxColor)
+                (St.square boxColor device)
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare illegalMoveIndicator) [ queenImg, targetSquare ]
                 }
@@ -429,11 +477,11 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
                     knightMoveIndicator
 
         Illegal ->
-            E.row (St.square boxColor) <| [ knightImg, queenImg, targetSquare ]
+            E.row (St.square boxColor device) <| [ knightImg, queenImg, targetSquare ]
 
 
 startingBox : File -> Rank -> Model -> Element Msg
-startingBox file rank { knight, knightSelected } =
+startingBox file rank { knight, knightSelected, device } =
     let
         isAttackedByQueen =
             if ( file, rank ) /= ( D, Five ) && List.member ( file, rank ) queenMoves then
@@ -472,7 +520,7 @@ startingBox file rank { knight, knightSelected } =
         queenImg =
             if file == D && rank == Five then
                 E.image
-                    St.queen
+                    (St.queen device)
                     { src = queenFilePath, description = "Queen" }
 
             else
@@ -480,12 +528,12 @@ startingBox file rank { knight, knightSelected } =
 
         targetSquare =
             if ( file, rank ) == ( A, One ) then
-                E.el St.targetSquare E.none
+                E.el (St.targetSquare device) E.none
 
             else
                 E.none
     in
-    E.row (St.square boxColor) <| [ knightImg, queenImg, targetSquare, attackedByQueenSquare ]
+    E.row (St.square boxColor device) <| [ knightImg, queenImg, targetSquare, attackedByQueenSquare ]
 
 
 legalMoveCircle : Element Msg
@@ -498,24 +546,24 @@ rankLabel rank =
     E.el St.rankLabelText (E.text <| rankToString rank)
 
 
-fileLabelRow : List File -> List (Element Msg)
-fileLabelRow files =
-    [ E.row [] <| E.el St.blankRankLabel E.none :: List.map fileLabel files ]
+fileLabelRow : Device -> List File -> List (Element Msg)
+fileLabelRow device files =
+    [ E.row [] <| E.el St.blankRankLabel E.none :: List.map (fileLabel device) files ]
 
 
-fileLabel : File -> Element Msg
-fileLabel file =
-    E.el St.fileLabelText (E.el St.center <| E.text <| fileToString file)
+fileLabel : Device -> File -> Element Msg
+fileLabel device file =
+    E.el (St.fileLabelText device) (E.el St.center <| E.text <| fileToString file)
 
 
-displayTimer : Maybe Int -> Element msg
-displayTimer timer =
+displayTimer : Maybe Int -> Device -> Element msg
+displayTimer timer device =
     case timer of
         Nothing ->
-            E.el St.timer <| E.text <| showTime 0
+            E.el (St.timer device) <| E.text <| showTime 0
 
         Just secs ->
-            E.el St.timer <| E.text <| showTime secs
+            E.el (St.timer device) <| E.text <| showTime secs
 
 
 displayFinalTimer : Maybe Int -> Element Msg

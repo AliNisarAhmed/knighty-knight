@@ -1,10 +1,14 @@
 module Styles exposing (..)
 
-import Element as E exposing (Attribute, Color, Element)
+import Element as E exposing (Attribute, Color, Device, DeviceClass(..), Element)
 import Element.Background as B
 import Element.Border as Border
 import Element.Font as Font
 import RankNFiles exposing (Move(..))
+
+
+scales =
+    E.modular 10 1.5
 
 
 boardWidth : number
@@ -15,6 +19,16 @@ boardWidth =
 squareWidth : number
 squareWidth =
     90
+
+
+desktopSquareWidth : Int
+desktopSquareWidth =
+    round <| squareWidth / 1.25
+
+
+tabletSquareWidth : Int
+tabletSquareWidth =
+    round <| squareWidth / 1.5
 
 
 knightWidth : number
@@ -30,6 +44,11 @@ selectedKnightWidth =
 queenWidth : number
 queenWidth =
     80
+
+
+desktopQueenWidth : number
+desktopQueenWidth =
+    60
 
 
 legalMoveCircleWidth : number
@@ -147,33 +166,83 @@ layout =
     ]
 
 
-content : List (Attribute msg)
-content =
-    [ E.centerX
-    , E.centerY
-    , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 400)
-    , E.height <| (E.px <| squareWidth * 8)
-    , E.spaceEvenly
-    ]
+content : Device -> List (Attribute msg)
+content { class, orientation } =
+    case class of
+        BigDesktop ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 400)
+            , E.height <| (E.px <| squareWidth * 8)
+            , E.spaceEvenly
+            ]
+
+        Desktop ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 1200)
+            , E.height <| (E.px <| squareWidth * 8)
+            ]
+
+        _ ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.fill
+            , E.height <| E.fill
+            , E.spaceEvenly
+            , E.padding 10
+            ]
 
 
-mainContent : List (Attribute msg)
-mainContent =
-    [ E.width <| E.fillPortion 3
-    , E.height E.fill
-    , E.paddingEach { top = 0, left = 40, right = 40, bottom = 30 }
-    ]
+mainContent : Device -> List (Attribute msg)
+mainContent { class } =
+    case class of
+        BigDesktop ->
+            [ E.width <| E.fillPortion 1
+            , E.height E.fill
+            , E.paddingEach { top = 0, left = 40, right = 40, bottom = 30 }
+            ]
+
+        Desktop ->
+            [ E.width <| E.fillPortion 1
+            , E.height (E.px <| 8 * desktopSquareWidth)
+            , E.paddingEach { top = 0, left = 20, right = 20, bottom = 0 }
+            ]
+
+        Tablet ->
+            [ E.paddingEach { top = 0, left = 10, right = 10, bottom = 0 }
+            , E.width <| (E.fill |> E.maximum 1000)
+            , E.centerX
+            , E.spaceEvenly
+            ]
+
+        _ ->
+            [ E.paddingEach { top = 0, left = 10, right = 10, bottom = 0 }
+            ]
 
 
-stats =
-    [ Border.width 2
-    , Border.color navyBlue
-    , E.centerY
-    , E.centerX
-    , B.color knightColor
-    , Border.rounded 20
-    , E.paddingXY 20 40
-    ]
+stats : Device -> List (Attribute msg)
+stats { class } =
+    case class of
+        BigDesktop ->
+            [ Border.width 2
+            , Border.color navyBlue
+            , E.centerY
+            , E.centerX
+            , B.color knightColor
+            , Border.rounded 20
+            , E.paddingXY 20 40
+            ]
+
+        _ ->
+            [ Border.width 2
+            , Border.color navyBlue
+            , E.centerY
+            , E.centerX
+            , B.color knightColor
+            , Border.rounded 20
+            , E.paddingXY 10 20
+            ]
 
 
 finishedStats =
@@ -192,21 +261,45 @@ statList =
     ]
 
 
-button : List (Attribute msg)
-button =
-    [ E.paddingXY 120 20
-    , B.color <| E.rgb255 53 117 35
-    , E.centerX
-    , Border.rounded 20
-    , Font.size 24
-    , Font.letterSpacing 1.5
-    , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
-    ]
+button : Device -> List (Attribute msg)
+button { class } =
+    case class of
+        BigDesktop ->
+            [ E.paddingXY 120 20
+            , B.color <| E.rgb255 53 117 35
+            , E.centerX
+            , Border.rounded 20
+            , Font.size 24
+            , Font.letterSpacing 1.5
+            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
+            ]
+
+        Desktop ->
+            [ E.paddingXY 120 20
+            , B.color <| E.rgb255 53 117 35
+            , E.centerX
+            , Border.rounded 20
+            , Font.size 24
+            , Font.letterSpacing 1.5
+            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
+            ]
+
+        _ ->
+            [ E.paddingXY 60 20
+            , B.color <| E.rgb255 53 117 35
+            , E.centerX
+            , Border.rounded 5
+            , Font.size 18
+            , Font.letterSpacing 1.5
+            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
+            , E.height E.fill
+            , E.alignRight
+            ]
 
 
-startButton : List (Attribute msg)
-startButton =
-    button
+startButton : Device -> List (Attribute msg)
+startButton device =
+    button device
         ++ [ Font.color <| E.rgba 1 1 1 0.8
            , B.color <| E.rgb255 53 117 35
            , E.alignBottom
@@ -214,9 +307,9 @@ startButton =
            ]
 
 
-resetButton : List (Attribute msg)
-resetButton =
-    button
+resetButton : Device -> List (Attribute msg)
+resetButton device =
+    button device
         ++ [ Font.color white
            , B.color red
            , Border.color red
@@ -225,59 +318,161 @@ resetButton =
            ]
 
 
-heading : List (Attribute msg)
-heading =
+heading : Device -> List (Attribute msg)
+heading { class } =
+    let
+        fontSize =
+            case class of
+                BigDesktop ->
+                    60
+
+                _ ->
+                    40
+    in
     [ Font.color knightColor
-    , Font.size 60
+    , Font.size fontSize
     , Font.bold
     , E.centerX
     , Font.letterSpacing 1.6
     ]
 
 
-text : List (Attribute msg)
-text =
-    [ E.spacing 10
-    , E.width <| (E.fill |> E.maximum 500)
-    , E.centerY
-    , E.centerX
-    , E.paddingXY 0 20
-    , Font.justify
-    , Font.color (E.rgba 1 1 1 0.8)
-    , B.color (E.rgba255 0 0 128 0.8)
-    , E.paddingEach { top = 40, left = 30, bottom = 40, right = 30 }
-    , Border.rounded 20
-    ]
+text : Device -> List (Attribute msg)
+text { class } =
+    case class of
+        BigDesktop ->
+            [ E.spacing 10
+            , E.width <| (E.fill |> E.maximum 500)
+            , E.centerY
+            , E.centerX
+            , E.paddingXY 0 20
+            , Font.justify
+            , Font.color (E.rgba 1 1 1 0.8)
+            , B.color (E.rgba255 0 0 128 0.8)
+            , E.paddingEach { top = 40, left = 30, bottom = 40, right = 30 }
+            , Border.rounded 20
+            ]
+
+        Tablet ->
+            [ E.spacing 10
+            , E.width (E.fill |> E.maximum 600)
+            , E.centerY
+            , E.centerX
+            , Font.justify
+            , Font.size 14
+            , Font.color (E.rgba 1 1 1 0.8)
+            , B.color (E.rgba255 0 0 128 0.8)
+            , E.paddingEach { top = 10, left = 10, bottom = 10, right = 10 }
+            , Border.rounded 5
+            ]
+
+        _ ->
+            [ E.spacing 10
+            , E.width <| (E.fill |> E.maximum 500)
+            , E.centerY
+            , E.centerX
+            , E.paddingXY 0 0
+            , Font.justify
+            , Font.size 18
+            , Font.color (E.rgba 1 1 1 0.8)
+            , B.color (E.rgba255 0 0 128 0.8)
+            , E.paddingEach { top = 40, left = 30, bottom = 40, right = 30 }
+            , Border.rounded 20
+            ]
 
 
-boardColumn : List (Attribute msg)
-boardColumn =
-    [ E.width (E.fillPortion 1)
-    , E.alignRight
-    ]
+boardColumn : Device -> List (Attribute msg)
+boardColumn { class } =
+    case class of
+        BigDesktop ->
+            [ E.width (E.fillPortion 1)
+            , E.alignRight
+            ]
+
+        Desktop ->
+            [ E.width (E.fillPortion 1)
+            , E.alignRight
+            , E.paddingEach { top = 0, left = 0, right = 20, bottom = 0 }
+            ]
+
+        _ ->
+            [ E.centerX
+            , E.paddingEach { top = 20, left = 0, right = 20, bottom = 0 }
+            ]
 
 
-square : Color -> List (Attribute msg)
-square color =
-    [ E.width <| E.px squareWidth
-    , E.height <| E.px squareWidth
-    , B.color color
-    , E.centerY
-    , E.centerX
-    , E.focused []
-    ]
+square : Color -> Device -> List (Attribute msg)
+square color { class } =
+    case class of
+        BigDesktop ->
+            [ E.width <| E.px squareWidth
+            , E.height <| E.px squareWidth
+            , B.color color
+            , E.centerY
+            , E.centerX
+            , E.focused []
+            ]
+
+        Desktop ->
+            [ E.width <| E.px <| desktopSquareWidth
+            , E.height <| E.px <| desktopSquareWidth
+            , B.color color
+            , E.centerY
+            , E.centerX
+            , E.focused []
+            ]
+
+        Tablet ->
+            [ E.width <| E.px <| tabletSquareWidth
+            , E.height <| E.px <| tabletSquareWidth
+            , B.color color
+            , E.centerY
+            , E.centerX
+            , E.focused []
+            ]
+
+        _ ->
+            [ E.width <| E.px <| round <| squareWidth / 1.25
+            , E.height <| E.px <| round <| squareWidth / 1.25
+            , B.color color
+            , E.centerY
+            , E.centerX
+            , E.focused []
+            ]
 
 
-targetSquare : List (Attribute msg)
-targetSquare =
-    [ E.width <| E.px squareWidth
-    , E.height <| E.px squareWidth
-    , B.color targetColor
-    , E.centerY
-    , E.centerX
-    , E.focused []
-    , B.color targetColor
-    ]
+targetSquare : Device -> List (Attribute msg)
+targetSquare { class } =
+    case class of
+        BigDesktop ->
+            [ E.width <| E.px squareWidth
+            , E.height <| E.px squareWidth
+            , B.color targetColor
+            , E.centerY
+            , E.centerX
+            , E.focused []
+            , B.color targetColor
+            ]
+
+        Desktop ->
+            [ E.width <| E.px desktopSquareWidth
+            , E.height <| E.px desktopSquareWidth
+            , B.color targetColor
+            , E.centerY
+            , E.centerX
+            , E.focused []
+            , B.color targetColor
+            ]
+
+        _ ->
+            [ E.width <| E.px tabletSquareWidth
+            , E.height <| E.px tabletSquareWidth
+            , B.color targetColor
+            , E.centerY
+            , E.centerX
+            , E.focused []
+            , B.color targetColor
+            ]
 
 
 knight : List (Attribute msg)
@@ -307,13 +502,22 @@ selectedKnight =
     ]
 
 
-queen : List (Attribute msg)
-queen =
-    [ E.centerX
-    , E.centerY
-    , E.width <| E.px queenWidth
-    , E.height <| E.px queenWidth
-    ]
+queen : Device -> List (Attribute msg)
+queen { class } =
+    case class of
+        BigDesktop ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.px queenWidth
+            , E.height <| E.px queenWidth
+            ]
+
+        _ ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.px desktopQueenWidth
+            , E.height <| E.px desktopQueenWidth
+            ]
 
 
 legalMoveCircle : List (Attribute msg)
@@ -376,42 +580,94 @@ blankRankLabel =
     ]
 
 
-fileLabelText : List (Attribute msg)
-fileLabelText =
-    [ Font.color <| E.rgb 1 1 1
-    , E.centerY
-    , E.centerX
-    , E.paddingXY 0 7
-    , E.width (E.px squareWidth)
-    ]
+fileLabelText : Device -> List (Attribute msg)
+fileLabelText { class } =
+    case class of
+        BigDesktop ->
+            [ Font.color <| E.rgb 1 1 1
+            , E.centerY
+            , E.centerX
+            , E.paddingXY 0 7
+            , E.width (E.px squareWidth)
+            ]
+
+        Desktop ->
+            [ Font.color <| E.rgb 1 1 1
+            , E.centerY
+            , E.centerX
+            , E.paddingXY 0 7
+            , E.width (E.px desktopSquareWidth)
+            ]
+
+        _ ->
+            [ Font.color <| E.rgb 1 1 1
+            , E.centerY
+            , E.centerX
+            , E.paddingXY 0 7
+            , E.width (E.px tabletSquareWidth)
+            ]
 
 
-targetSquareName : List (Attribute msg)
-targetSquareName =
-    [ Font.size 100
-    , Font.color white
-    , E.centerX
-    , E.centerY
-    , E.paddingEach { top = 0, bottom = 20, left = 0, right = 0 }
-    ]
+targetSquareName : Device -> List (Attribute msg)
+targetSquareName { class } =
+    case class of
+        BigDesktop ->
+            [ Font.size 100
+            , Font.color white
+            , E.centerX
+            , E.centerY
+            , E.paddingEach { top = 0, bottom = 20, left = 0, right = 0 }
+            ]
+
+        _ ->
+            [ Font.size 80
+            , Font.color white
+            , E.centerX
+            , E.centerY
+            , E.paddingEach { top = 20, bottom = 0, left = 0, right = 0 }
+            ]
 
 
-knightStartingSquareText =
-    [ Font.size 32
-    , Font.color knightLightGold
-    ]
+knightStartingSquareText : Device -> List (Attribute msg)
+knightStartingSquareText { class } =
+    case class of
+        Tablet ->
+            [ Font.size 24
+            , Font.color knightLightGold
+            ]
+
+        _ ->
+            [ Font.size 32
+            , Font.color knightLightGold
+            ]
 
 
-targetSquareText =
-    [ Font.size 32
-    , Font.color targetColor
-    ]
+targetSquareText : Device -> List (Attribute msg)
+targetSquareText { class } =
+    case class of
+        Tablet ->
+            [ Font.size 24
+            , Font.color targetColor
+            ]
+
+        _ ->
+            [ Font.size 32
+            , Font.color targetColor
+            ]
 
 
-queenSquareText =
-    [ Font.size 32
-    , Font.color queenColor
-    ]
+queenSquareText : Device -> List (Attribute msg)
+queenSquareText { class } =
+    case class of
+        Tablet ->
+            [ Font.size 24
+            , Font.color queenColor
+            ]
+
+        _ ->
+            [ Font.size 32
+            , Font.color queenColor
+            ]
 
 
 totalMovesText =
@@ -447,11 +703,20 @@ wrongMovesNumber =
     ]
 
 
-timer =
-    [ Font.size 60
-    , Font.color white
-    , E.centerX
-    ]
+timer : Device -> List (Attribute msg)
+timer { class } =
+    case class of
+        BigDesktop ->
+            [ Font.size 60
+            , Font.color white
+            , E.centerX
+            ]
+
+        _ ->
+            [ Font.size 50
+            , Font.color white
+            , E.centerX
+            ]
 
 
 congrats =
