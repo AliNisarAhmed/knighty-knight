@@ -237,15 +237,38 @@ update msg model =
 
 view : Model -> Document Msg
 view model =
-    { title = "Knighty Knight"
-    , body =
-        [ E.layout St.layout <|
-            E.row (St.content model.device) <|
-                [ E.column (St.mainContent model.device) <| mainContent model
-                , E.column (St.boardColumn model.device) <| board model
+    let
+        mainContentSection =
+            case model.device.class of
+                Tablet ->
+                    E.row (St.mainContent model.device) <| mainContent model
+
+                _ ->
+                    E.column (St.mainContent model.device) <| mainContent model
+    in
+    case model.device.class of
+        Tablet ->
+            { title = "Knighty Knight"
+            , body =
+                [ E.layout St.layout <|
+                    E.column (St.content model.device) <|
+                        [ title model.device
+                        , E.column (St.boardColumn model.device) <| board model
+                        , mainContentSection
+                        ]
                 ]
-        ]
-    }
+            }
+
+        _ ->
+            { title = "Knighty Knight"
+            , body =
+                [ E.layout St.layout <|
+                    E.row (St.content model.device) <|
+                        [ mainContentSection
+                        , E.column (St.boardColumn model.device) <| board model
+                        ]
+                ]
+            }
 
 
 mainContent : Model -> List (Element Msg)
@@ -253,16 +276,24 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
     let
         accuracy =
             (totalMoves - wrongMoves) * 100 // totalMoves
+
+        titleElement =
+            case device.class of
+                Tablet ->
+                    E.none
+
+                _ ->
+                    title device
     in
     case gameState of
         NotStarted ->
-            [ title device
+            [ titleElement
             , explanation device
-            , startButton
+            , startButton device
             ]
 
         Finished ->
-            [ title device
+            [ titleElement
             , E.column St.finishedStats <|
                 [ E.paragraph St.congrats [ E.text "Congratulations, you did it!" ]
                 , E.el St.took <| E.text "It took you: "
@@ -281,14 +312,14 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
                         ]
                     ]
                 ]
-            , restartButton
+            , restartButton device
             ]
 
         _ ->
             [ title device
-            , E.el St.targetSquareName <| E.text <| squareToString currentTarget
-            , E.column St.stats <|
-                [ displayTimer timer
+            , E.el (St.targetSquareName device) <| E.text <| squareToString currentTarget
+            , E.column (St.stats device) <|
+                [ displayTimer timer device
                 , E.el St.wrongMovesNumber <| E.text <| String.fromInt wrongMoves
                 , E.paragraph St.wrongMovesText <|
                     [ E.text <| "Wrong attempted moves"
@@ -298,7 +329,7 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
                     E.text <|
                         "Total moves"
                 ]
-            , resetButton
+            , resetButton device
             ]
 
 
@@ -311,28 +342,28 @@ explanation : Device -> Element Msg
 explanation device =
     E.paragraph (St.text device) <|
         [ E.text "Can you take the knight at "
-        , E.el St.knightStartingSquareText <| E.text "h8"
+        , E.el (St.knightStartingSquareText device) <| E.text "h8"
         , E.text " square, visiting all the squares one by one (left to right, top to bottom), all the way to the "
-        , E.el St.targetSquareText <| E.text "a1"
+        , E.el (St.targetSquareText device) <| E.text "a1"
         , E.text " square, while avoiding all the squares attacked by the enemy "
-        , E.el St.queenSquareText <| E.text "Queen"
+        , E.el (St.queenSquareText device) <| E.text "Queen"
         , E.text " stationed at d5?"
         ]
 
 
-startButton : Element Msg
-startButton =
-    Input.button St.startButton { onPress = Just <| StartPressed, label = E.el [] <| E.text "START" }
+startButton : Device -> Element Msg
+startButton device =
+    Input.button (St.startButton device) { onPress = Just <| StartPressed, label = E.el [] <| E.text "START" }
 
 
-resetButton : Element Msg
-resetButton =
-    Input.button St.resetButton { onPress = Just ResetGame, label = E.el [] <| E.text "RESET" }
+resetButton : Device -> Element Msg
+resetButton device =
+    Input.button (St.resetButton device) { onPress = Just ResetGame, label = E.el [] <| E.text "RESET" }
 
 
-restartButton : Element Msg
-restartButton =
-    Input.button St.startButton { onPress = Just ResetGame, label = E.el [] <| E.text "Play Again?" }
+restartButton : Device -> Element Msg
+restartButton device =
+    Input.button (St.startButton device) { onPress = Just ResetGame, label = E.el [] <| E.text "Play Again?" }
 
 
 board : Model -> List (Element Msg)
@@ -525,14 +556,14 @@ fileLabel device file =
     E.el (St.fileLabelText device) (E.el St.center <| E.text <| fileToString file)
 
 
-displayTimer : Maybe Int -> Element msg
-displayTimer timer =
+displayTimer : Maybe Int -> Device -> Element msg
+displayTimer timer device =
     case timer of
         Nothing ->
-            E.el St.timer <| E.text <| showTime 0
+            E.el (St.timer device) <| E.text <| showTime 0
 
         Just secs ->
-            E.el St.timer <| E.text <| showTime secs
+            E.el (St.timer device) <| E.text <| showTime secs
 
 
 displayFinalTimer : Maybe Int -> Element Msg
