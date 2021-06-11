@@ -52,32 +52,32 @@ ranks =
     [ Eight, Seven, Six, Five, Four, Three, Two, One ]
 
 
-fileToString : File -> String
-fileToString f =
+fileToInt : File -> number
+fileToInt f =
     case f of
         A ->
-            "a"
+            0
 
         B ->
-            "b"
+            1
 
         C ->
-            "c"
+            2
 
         D ->
-            "d"
+            3
 
         E ->
-            "e"
+            4
 
         F ->
-            "f"
+            5
 
         G ->
-            "g"
+            6
 
         H ->
-            "h"
+            7
 
 
 rankToInt : Rank -> Int
@@ -106,6 +106,34 @@ rankToInt f =
 
         Eight ->
             8
+
+
+fileToString : File -> String
+fileToString f =
+    case f of
+        A ->
+            "a"
+
+        B ->
+            "b"
+
+        C ->
+            "c"
+
+        D ->
+            "d"
+
+        E ->
+            "e"
+
+        F ->
+            "f"
+
+        G ->
+            "g"
+
+        H ->
+            "h"
 
 
 rankToString : Rank -> String

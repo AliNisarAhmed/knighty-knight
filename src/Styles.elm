@@ -4,7 +4,35 @@ import Element as E exposing (Attribute, Color, Device, DeviceClass(..), Element
 import Element.Background as B
 import Element.Border as Border
 import Element.Font as Font
-import RankNFiles exposing (Move(..))
+import RankNFiles exposing (File(..), Move(..), Rank(..), fileToInt, rankToInt)
+import Simple.Animation as Animation exposing (Animation)
+import Simple.Animation.Animated as Animated
+import Simple.Animation.Property as P
+
+
+animatedEl : Animation -> List (Attribute msg) -> Element msg -> Element msg
+animatedEl =
+    animatedUi E.el
+
+
+animatedUi =
+    Animated.ui { behindContent = E.behindContent, htmlAttribute = E.htmlAttribute, html = E.html }
+
+
+animation : ( Float, Float ) -> ( Float, Float ) -> Animation
+animation ( oldX, oldY ) ( newX, newY ) =
+    Animation.steps
+        { startAt = [ P.x oldX, P.y oldY, P.property "z-index" "2" ]
+        , options = [ Animation.count 1 ]
+        }
+        [ Animation.step 170 <| [ P.x newX, P.y newY, P.property "z-index" "2" ] ]
+
+
+knightPosition : File -> Rank -> ( Float, Float )
+knightPosition file rank =
+    ( fileToInt file * toFloat desktopSquareWidth + toFloat knightWidth / 2
+    , (toFloat (8 - rankToInt rank) * toFloat desktopSquareWidth) + 65
+    )
 
 
 scales =

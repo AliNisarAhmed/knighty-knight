@@ -6,9 +6,10 @@ import Browser.Events exposing (onResize)
 import Css exposing (..)
 import Element as E exposing (Color, Device, DeviceClass(..), Element, Orientation(..))
 import Element.Input as Input
+import Html exposing (Html)
 import Process
 import RankNFiles exposing (..)
-import Styles as St
+import Styles as St exposing (knightPosition)
 import Task
 import Time
 
@@ -34,8 +35,8 @@ type alias Knight =
     }
 
 
-knightStartingPosition : Knight
-knightStartingPosition =
+knightStartingCoords : Knight
+knightStartingCoords =
     { rank = Eight
     , file = H
     }
@@ -74,6 +75,8 @@ type alias Flags =
 
 type alias Model =
     { knight : Knight
+    , knightOldPosition : ( Float, Float )
+    , knightNewPosition : ( Float, Float )
     , knightSelected : Maybe LegalMoves
     , currentTarget : ( File, Rank )
     , totalMoves : Int
@@ -88,7 +91,13 @@ type alias Model =
 
 initModel : Model
 initModel =
-    { knight = knightStartingPosition
+    let
+        knightStartingPosition =
+            St.knightPosition knightStartingCoords.file knightStartingCoords.rank
+    in
+    { knight = knightStartingCoords
+    , knightOldPosition = knightStartingPosition
+    , knightNewPosition = knightStartingPosition
     , knightSelected = Nothing
     , currentTarget = ( F, Eight )
     , totalMoves = 0
@@ -185,6 +194,8 @@ update msg model =
                     NextTarget newTarget remainingValidMoves ->
                         ( { model
                             | knight = { rank = rank, file = file }
+                            , knightOldPosition = model.knightNewPosition
+                            , knightNewPosition = St.knightPosition file rank
                             , knightSelected = Just <| getLegalMoves file rank
                             , currentTarget = newTarget
                             , totalMoves = model.totalMoves + 1
@@ -197,6 +208,8 @@ update msg model =
                     NotHit ->
                         ( { model
                             | knight = { rank = rank, file = file }
+                            , knightOldPosition = model.knightNewPosition
+                            , knightNewPosition = St.knightPosition file rank
                             , knightSelected = Just <| getLegalMoves file rank
                             , totalMoves = model.totalMoves + 1
                             , gameState = newGameState
@@ -208,6 +221,8 @@ update msg model =
                         ( { model
                             | gameState = Finished
                             , knight = { rank = rank, file = file }
+                            , knightOldPosition = model.knightNewPosition
+                            , knightNewPosition = St.knightPosition file rank
                             , knightSelected = Nothing
                           }
                         , Cmd.none
@@ -376,14 +391,36 @@ board model =
 
                 _ ->
                     box
+
+        knightStyles =
+            case model.knightSelected of
+                Just _ ->
+                    St.selectedKnight
+
+                Nothing ->
+                    St.knight
+
+        knightImg =
+            case model.gameState of
+                NotStarted ->
+                    E.none
+
+                _ ->
+                    St.animatedEl (St.animation model.knightOldPosition model.knightNewPosition)
+                        []
+                        (E.image
+                            knightStyles
+                            { src = knightFilePath, description = "Knight" }
+                        )
     in
-    List.map
-        (\rank ->
-            E.row [] <|
-                rankLabel rank
-                    :: List.map (\file -> drawnBox file rank model) files
-        )
-        ranks
+    knightImg
+        :: List.map
+            (\rank ->
+                E.row [] <|
+                    rankLabel rank
+                        :: List.map (\file -> drawnBox file rank model) files
+            )
+            ranks
         ++ fileLabelRow model.device files
 
 
@@ -401,15 +438,23 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
                 Nothing ->
                     St.knight
 
-        knightImg =
-            if file == knight.file && rank == knight.rank then
-                E.image
-                    knightStyles
-                    { src = knightFilePath, description = "Knight" }
-
-            else
-                E.none
-
+        -- knightImg =
+        --     if file == knight.file && rank == knight.rank then
+        --         St.animatedEl St.animation
+        --             []
+        --             (E.image
+        --                 knightStyles
+        --                 { src = knightFilePath, description = "Knight" }
+        --             )
+        --     else
+        --         E.none
+        -- knightImg =
+        --     St.animatedEl St.animation
+        --         []
+        --         (E.image
+        --             knightStyles
+        --             { src = knightFilePath, description = "Knight" }
+        --         )
         move =
             case knightSelected of
                 Nothing ->
@@ -477,7 +522,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
                     knightMoveIndicator
 
         Illegal ->
-            E.row (St.square boxColor device) <| [ knightImg, queenImg, targetSquare ]
+            E.row (St.square boxColor device) <| [ queenImg, targetSquare ]
 
 
 startingBox : File -> Rank -> Model -> Element Msg
