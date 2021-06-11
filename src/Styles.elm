@@ -10,6 +10,10 @@ import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as P
 
 
+
+--- Animations
+
+
 animatedEl : Animation -> List (Attribute msg) -> Element msg -> Element msg
 animatedEl =
     animatedUi E.el
@@ -33,6 +37,10 @@ knightPosition file rank =
     ( fileToInt file * toFloat desktopSquareWidth + toFloat knightWidth / 2
     , (toFloat (8 - rankToInt rank) * toFloat desktopSquareWidth) + 65
     )
+
+
+
+----
 
 
 scales =
@@ -171,8 +179,10 @@ goldenRod =
 
 
 ---- STYLES ----
--- debug =
---     E.explain Debug.todo
+
+
+debug =
+    E.explain Debug.todo
 
 
 center : List (Attribute msg)
@@ -203,6 +213,7 @@ content { class, orientation } =
             , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 400)
             , E.height <| (E.px <| squareWidth * 8)
             , E.spaceEvenly
+            , debug
             ]
 
         Desktop ->
@@ -210,6 +221,7 @@ content { class, orientation } =
             , E.centerY
             , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 1200)
             , E.height <| (E.px <| squareWidth * 8)
+            , debug
             ]
 
         _ ->
@@ -219,7 +231,42 @@ content { class, orientation } =
             , E.height <| E.fill
             , E.spaceEvenly
             , E.padding 10
+            , debug
             ]
+
+
+mainContentLandscape : Device -> List (Attribute msg)
+mainContentLandscape { class } =
+    case class of
+        BigDesktop ->
+            [ E.width <| E.fillPortion 1
+            , E.height E.fill
+            , E.paddingEach { top = 0, left = 40, right = 40, bottom = 30 }
+            ]
+
+        Desktop ->
+            [ E.width <| E.fillPortion 1
+            , E.height (E.px <| 8 * desktopSquareWidth)
+            , E.paddingEach { top = 0, left = 20, right = 20, bottom = 0 }
+            ]
+
+        _ ->
+            [ E.width <| E.fillPortion 1
+            , E.height (E.px <| 8 * desktopSquareWidth)
+            , E.paddingEach { top = 0, left = 20, right = 20, bottom = 0 }
+            ]
+
+
+
+-- Tablet ->
+--     [ E.paddingEach { top = 0, left = 10, right = 10, bottom = 0 }
+--     , E.width <| (E.fill |> E.maximum 1000)
+--     , E.centerX
+--     , E.spaceEvenly
+--     ]
+-- _ ->
+--     [ E.paddingEach { top = 0, left = 10, right = 10, bottom = 0 }
+--     ]
 
 
 mainContent : Device -> List (Attribute msg)
@@ -320,7 +367,8 @@ button { class } =
             , Font.size 18
             , Font.letterSpacing 1.5
             , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
-            , E.height E.fill
+
+            -- , E.height E.fill
             , E.alignRight
             ]
 
@@ -346,6 +394,11 @@ resetButton device =
            ]
 
 
+headingContainer : List (Attribute msg)
+headingContainer =
+    [ E.centerX, Font.center ]
+
+
 heading : Device -> List (Attribute msg)
 heading { class } =
     let
@@ -360,7 +413,6 @@ heading { class } =
     [ Font.color knightColor
     , Font.size fontSize
     , Font.bold
-    , E.centerX
     , Font.letterSpacing 1.6
     ]
 

@@ -254,15 +254,15 @@ view : Model -> Document Msg
 view model =
     let
         mainContentSection =
-            case model.device.class of
-                Tablet ->
-                    E.row (St.mainContent model.device) <| mainContent model
+            case model.device.orientation of
+                Landscape ->
+                    E.column (St.mainContentLandscape model.device) <| mainContent model
 
                 _ ->
                     E.column (St.mainContent model.device) <| mainContent model
     in
-    case model.device.class of
-        Tablet ->
+    case model.device.orientation of
+        Portrait ->
             { title = "Knighty Knight"
             , body =
                 [ E.layout St.layout <|
@@ -274,7 +274,7 @@ view model =
                 ]
             }
 
-        _ ->
+        Landscape ->
             { title = "Knighty Knight"
             , body =
                 [ E.layout St.layout <|
@@ -293,12 +293,11 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
             (totalMoves - wrongMoves) * 100 // totalMoves
 
         titleElement =
-            case device.class of
-                Tablet ->
-                    E.none
-
-                _ ->
-                    title device
+            -- case device.class of
+            --     Tablet ->
+            --         E.none
+            --     _ ->
+            title device
     in
     case gameState of
         NotStarted ->
@@ -350,7 +349,7 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
 
 title : Device -> Element Msg
 title device =
-    E.el [ E.width E.fill ] <| E.el (St.heading device) <| E.text "A KNIGHT'S JOURNEY"
+    E.paragraph St.headingContainer <| [ E.el (St.heading device) <| E.text "A KNIGHT'S JOURNEY" ]
 
 
 explanation : Device -> Element Msg
