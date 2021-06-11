@@ -1,5 +1,7 @@
 module Styles exposing (..)
 
+import Colors as Colors
+import Config as Cfg
 import Element as E exposing (Attribute, Color, Device, DeviceClass(..), Element)
 import Element.Background as B
 import Element.Border as Border
@@ -32,152 +34,27 @@ animation ( oldX, oldY ) ( newX, newY ) =
         [ Animation.step 170 <| [ P.x newX, P.y newY, P.property "z-index" "2" ] ]
 
 
-knightPosition : File -> Rank -> ( Float, Float )
-knightPosition file rank =
-    ( fileToInt file * toFloat desktopSquareWidth + toFloat knightWidth / 2
-    , (toFloat (8 - rankToInt rank) * toFloat desktopSquareWidth) + 65
-    )
+knightPosition : File -> Rank -> Device -> ( Float, Float )
+knightPosition file rank device =
+    case device.class of
+        Desktop ->
+            ( fileToInt file * toFloat Cfg.desktopSquareWidth + toFloat Cfg.knightWidth / 2
+            , (toFloat (8 - rankToInt rank) * toFloat Cfg.desktopSquareWidth) + (toFloat <| getKnightSize device + 5)
+            )
+
+        Tablet ->
+            ( fileToInt file * toFloat Cfg.tabletSquareWidth + toFloat Cfg.knightWidth / 2
+            , (toFloat (8 - rankToInt rank) * toFloat Cfg.tabletSquareWidth) + (toFloat <| getKnightSize device + 5)
+            )
+
+        _ ->
+            ( fileToInt file * toFloat Cfg.desktopSquareWidth + toFloat Cfg.knightWidth / 2
+            , (toFloat (8 - rankToInt rank) * toFloat Cfg.desktopSquareWidth) + (toFloat <| getKnightSize device + 5)
+            )
 
 
 
 ----
-
-
-scales =
-    E.modular 10 1.5
-
-
-boardWidth : number
-boardWidth =
-    850
-
-
-squareWidth : number
-squareWidth =
-    90
-
-
-desktopSquareWidth : Int
-desktopSquareWidth =
-    round <| squareWidth / 1.25
-
-
-tabletSquareWidth : Int
-tabletSquareWidth =
-    round <| squareWidth / 1.5
-
-
-knightWidth : number
-knightWidth =
-    50
-
-
-selectedKnightWidth : number
-selectedKnightWidth =
-    60
-
-
-queenWidth : number
-queenWidth =
-    80
-
-
-desktopQueenWidth : number
-desktopQueenWidth =
-    60
-
-
-legalMoveCircleWidth : number
-legalMoveCircleWidth =
-    20
-
-
-squareDarkColor : Color
-squareDarkColor =
-    E.rgb255 232 235 239
-
-
-squareLight : Color
-squareLight =
-    E.rgb255 125 135 150
-
-
-warnColor : Color
-warnColor =
-    E.rgba255 181 20 18 0.8
-
-
-bgColor : Color
-bgColor =
-    E.rgb255 70 130 180
-
-
-legalMoveCircleColorLight : Color
-legalMoveCircleColorLight =
-    E.rgba255 0 0 0 0.23
-
-
-targetColor : Color
-targetColor =
-    E.rgba 0 1 0 0.6
-
-
-knightColor : Color
-knightColor =
-    E.rgb255 82 27 59
-
-
-knightLightGold : Color
-knightLightGold =
-    E.rgb255 255 207 112
-
-
-knightShadow : Color
-knightShadow =
-    E.rgba255 0 0 0 0.6
-
-
-queenColor : Color
-queenColor =
-    E.rgb255 128 77 118
-
-
-white : Color
-white =
-    E.rgb 1 1 1
-
-
-black : Color
-black =
-    E.rgb 0 0 0
-
-
-red : Color
-red =
-    E.rgba255 150 11 11 0.8
-
-
-underAttackRed : Color
-underAttackRed =
-    red
-
-
-navyBlue : Color
-navyBlue =
-    E.rgb255 0 0 128
-
-
-lightRed : Color
-lightRed =
-    E.rgba255 255 134 134 0.8
-
-
-goldenRod : Color
-goldenRod =
-    E.rgb255 218 165 32
-
-
-
 ---- STYLES ----
 
 
@@ -194,7 +71,7 @@ layout : List (Attribute msg)
 layout =
     [ E.centerX
     , E.centerY
-    , B.color bgColor
+    , B.color Colors.bgColor
     , E.width <| E.fill
     , E.height E.fill
     , Font.family
@@ -211,7 +88,7 @@ content { class, orientation } =
             [ E.centerX
             , E.centerY
             , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 400)
-            , E.height <| (E.px <| squareWidth * 8)
+            , E.height <| (E.px <| Cfg.squareWidth * 8)
             , E.spaceEvenly
             , debug
             ]
@@ -220,7 +97,7 @@ content { class, orientation } =
             [ E.centerX
             , E.centerY
             , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 1200)
-            , E.height <| (E.px <| squareWidth * 8)
+            , E.height <| (E.px <| Cfg.squareWidth * 8)
             , debug
             ]
 
@@ -246,13 +123,13 @@ mainContentLandscape { class } =
 
         Desktop ->
             [ E.width <| E.fillPortion 1
-            , E.height (E.px <| 8 * desktopSquareWidth)
+            , E.height (E.px <| 8 * Cfg.desktopSquareWidth)
             , E.paddingEach { top = 0, left = 20, right = 20, bottom = 0 }
             ]
 
         _ ->
             [ E.width <| E.fillPortion 1
-            , E.height (E.px <| 8 * desktopSquareWidth)
+            , E.height (E.px <| 8 * Cfg.desktopSquareWidth)
             , E.paddingEach { top = 0, left = 20, right = 20, bottom = 0 }
             ]
 
@@ -280,7 +157,7 @@ mainContent { class } =
 
         Desktop ->
             [ E.width <| E.fillPortion 1
-            , E.height (E.px <| 8 * desktopSquareWidth)
+            , E.height (E.px <| 8 * Cfg.desktopSquareWidth)
             , E.paddingEach { top = 0, left = 20, right = 20, bottom = 0 }
             ]
 
@@ -301,20 +178,20 @@ stats { class } =
     case class of
         BigDesktop ->
             [ Border.width 2
-            , Border.color navyBlue
+            , Border.color Colors.navyBlue
             , E.centerY
             , E.centerX
-            , B.color knightColor
+            , B.color Colors.knightColor
             , Border.rounded 20
             , E.paddingXY 20 40
             ]
 
         _ ->
             [ Border.width 2
-            , Border.color navyBlue
+            , Border.color Colors.navyBlue
             , E.centerY
             , E.centerX
-            , B.color knightColor
+            , B.color Colors.knightColor
             , Border.rounded 20
             , E.paddingXY 10 20
             ]
@@ -322,11 +199,11 @@ stats { class } =
 
 finishedStats =
     [ E.paddingEach { top = 40, left = 40, right = 40, bottom = 30 }
-    , B.color goldenRod
+    , B.color Colors.goldenRod
     , E.centerY
     , E.centerX
     , Border.rounded 20
-    , Font.color navyBlue
+    , Font.color Colors.navyBlue
     ]
 
 
@@ -346,7 +223,7 @@ button { class } =
             , Border.rounded 20
             , Font.size 24
             , Font.letterSpacing 1.5
-            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
+            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = Colors.knightShadow }
             ]
 
         Desktop ->
@@ -356,7 +233,7 @@ button { class } =
             , Border.rounded 20
             , Font.size 24
             , Font.letterSpacing 1.5
-            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
+            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = Colors.knightShadow }
             ]
 
         _ ->
@@ -366,7 +243,7 @@ button { class } =
             , Border.rounded 5
             , Font.size 18
             , Font.letterSpacing 1.5
-            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = knightShadow }
+            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = Colors.knightShadow }
 
             -- , E.height E.fill
             , E.alignRight
@@ -386,11 +263,12 @@ startButton device =
 resetButton : Device -> List (Attribute msg)
 resetButton device =
     button device
-        ++ [ Font.color white
-           , B.color red
-           , Border.color red
+        ++ [ Font.color Colors.white
+           , B.color Colors.red
+           , Border.color Colors.red
            , Border.width 1
            , E.alignBottom
+           , E.centerX
            ]
 
 
@@ -410,7 +288,7 @@ heading { class } =
                 _ ->
                     40
     in
-    [ Font.color knightColor
+    [ Font.color Colors.knightColor
     , Font.size fontSize
     , Font.bold
     , Font.letterSpacing 1.6
@@ -485,8 +363,8 @@ square : Color -> Device -> List (Attribute msg)
 square color { class } =
     case class of
         BigDesktop ->
-            [ E.width <| E.px squareWidth
-            , E.height <| E.px squareWidth
+            [ E.width <| E.px Cfg.squareWidth
+            , E.height <| E.px Cfg.squareWidth
             , B.color color
             , E.centerY
             , E.centerX
@@ -494,8 +372,8 @@ square color { class } =
             ]
 
         Desktop ->
-            [ E.width <| E.px <| desktopSquareWidth
-            , E.height <| E.px <| desktopSquareWidth
+            [ E.width <| E.px <| Cfg.desktopSquareWidth
+            , E.height <| E.px <| Cfg.desktopSquareWidth
             , B.color color
             , E.centerY
             , E.centerX
@@ -503,8 +381,8 @@ square color { class } =
             ]
 
         Tablet ->
-            [ E.width <| E.px <| tabletSquareWidth
-            , E.height <| E.px <| tabletSquareWidth
+            [ E.width <| E.px <| Cfg.tabletSquareWidth
+            , E.height <| E.px <| Cfg.tabletSquareWidth
             , B.color color
             , E.centerY
             , E.centerX
@@ -512,8 +390,8 @@ square color { class } =
             ]
 
         _ ->
-            [ E.width <| E.px <| round <| squareWidth / 1.25
-            , E.height <| E.px <| round <| squareWidth / 1.25
+            [ E.width <| E.px <| round <| Cfg.squareWidth / 1.25
+            , E.height <| E.px <| round <| Cfg.squareWidth / 1.25
             , B.color color
             , E.centerY
             , E.centerX
@@ -525,33 +403,33 @@ targetSquare : Device -> List (Attribute msg)
 targetSquare { class } =
     case class of
         BigDesktop ->
-            [ E.width <| E.px squareWidth
-            , E.height <| E.px squareWidth
-            , B.color targetColor
+            [ E.width <| E.px Cfg.squareWidth
+            , E.height <| E.px Cfg.squareWidth
+            , B.color Colors.targetColor
             , E.centerY
             , E.centerX
             , E.focused []
-            , B.color targetColor
+            , B.color Colors.targetColor
             ]
 
         Desktop ->
-            [ E.width <| E.px desktopSquareWidth
-            , E.height <| E.px desktopSquareWidth
-            , B.color targetColor
+            [ E.width <| E.px Cfg.desktopSquareWidth
+            , E.height <| E.px Cfg.desktopSquareWidth
+            , B.color Colors.targetColor
             , E.centerY
             , E.centerX
             , E.focused []
-            , B.color targetColor
+            , B.color Colors.targetColor
             ]
 
         _ ->
-            [ E.width <| E.px tabletSquareWidth
-            , E.height <| E.px tabletSquareWidth
-            , B.color targetColor
+            [ E.width <| E.px Cfg.tabletSquareWidth
+            , E.height <| E.px Cfg.tabletSquareWidth
+            , B.color Colors.targetColor
             , E.centerY
             , E.centerX
             , E.focused []
-            , B.color targetColor
+            , B.color Colors.targetColor
             ]
 
 
@@ -559,25 +437,35 @@ knight : List (Attribute msg)
 knight =
     [ E.centerX
     , E.centerY
-    , E.width <| E.px knightWidth
-    , E.height <| E.px knightWidth
+    , E.width <| E.px Cfg.knightWidth
+    , E.height <| E.px Cfg.knightWidth
     ]
 
 
-selectedKnight : List (Attribute msg)
-selectedKnight =
+getKnightSize : Device -> Int
+getKnightSize { class } =
+    case class of
+        Tablet ->
+            round <| Cfg.selectedKnightWidth / 1.25
+
+        _ ->
+            Cfg.selectedKnightWidth
+
+
+selectedKnight : Device -> List (Attribute msg)
+selectedKnight device =
     [ E.centerX
     , E.centerY
-    , E.width <| E.px selectedKnightWidth
-    , E.height <| E.px selectedKnightWidth
+    , E.width <| E.px <| getKnightSize device
+    , E.height <| E.px <| getKnightSize device
     , E.pointer
     , Border.shadow
         { offset = ( 0, 0 )
         , size = 0.1
         , blur = 40
-        , color = knightShadow
+        , color = Colors.knightShadow
         }
-    , B.color legalMoveCircleColorLight
+    , B.color Colors.legalMoveCircleColorLight
     , Border.rounded 20
     ]
 
@@ -588,23 +476,23 @@ queen { class } =
         BigDesktop ->
             [ E.centerX
             , E.centerY
-            , E.width <| E.px queenWidth
-            , E.height <| E.px queenWidth
+            , E.width <| E.px Cfg.queenWidth
+            , E.height <| E.px Cfg.queenWidth
             ]
 
         _ ->
             [ E.centerX
             , E.centerY
-            , E.width <| E.px desktopQueenWidth
-            , E.height <| E.px desktopQueenWidth
+            , E.width <| E.px Cfg.desktopQueenWidth
+            , E.height <| E.px Cfg.desktopQueenWidth
             ]
 
 
 legalMoveCircle : List (Attribute msg)
 legalMoveCircle =
-    [ B.color legalMoveCircleColorLight
-    , E.width <| E.px legalMoveCircleWidth
-    , E.height <| E.px legalMoveCircleWidth
+    [ B.color Colors.legalMoveCircleColorLight
+    , E.width <| E.px Cfg.legalMoveCircleWidth
+    , E.height <| E.px Cfg.legalMoveCircleWidth
     , E.centerX
     , E.centerY
     , Border.rounded 10
@@ -620,16 +508,16 @@ attackedByQueen : List (Attribute msg)
 attackedByQueen =
     [ E.centerX
     , E.centerY
-    , Font.color underAttackRed
+    , Font.color Colors.underAttackRed
     ]
 
 
 x1 : List (Attribute msg)
 x1 =
     [ E.rotate (degrees 45)
-    , E.width (E.px legalMoveCircleWidth)
+    , E.width (E.px Cfg.legalMoveCircleWidth)
     , E.height (E.px 2)
-    , B.color underAttackRed
+    , B.color Colors.underAttackRed
     , E.inFront <| E.el x2 E.none
     ]
 
@@ -637,9 +525,9 @@ x1 =
 x2 : List (Attribute msg)
 x2 =
     [ E.rotate (degrees 90)
-    , E.width (E.px legalMoveCircleWidth)
+    , E.width (E.px Cfg.legalMoveCircleWidth)
     , E.height (E.px 2)
-    , B.color underAttackRed
+    , B.color Colors.underAttackRed
     ]
 
 
@@ -668,7 +556,7 @@ fileLabelText { class } =
             , E.centerY
             , E.centerX
             , E.paddingXY 0 7
-            , E.width (E.px squareWidth)
+            , E.width (E.px Cfg.squareWidth)
             ]
 
         Desktop ->
@@ -676,7 +564,7 @@ fileLabelText { class } =
             , E.centerY
             , E.centerX
             , E.paddingXY 0 7
-            , E.width (E.px desktopSquareWidth)
+            , E.width (E.px Cfg.desktopSquareWidth)
             ]
 
         _ ->
@@ -684,7 +572,7 @@ fileLabelText { class } =
             , E.centerY
             , E.centerX
             , E.paddingXY 0 7
-            , E.width (E.px tabletSquareWidth)
+            , E.width (E.px Cfg.tabletSquareWidth)
             ]
 
 
@@ -693,7 +581,7 @@ targetSquareName { class } =
     case class of
         BigDesktop ->
             [ Font.size 100
-            , Font.color white
+            , Font.color Colors.white
             , E.centerX
             , E.centerY
             , E.paddingEach { top = 0, bottom = 20, left = 0, right = 0 }
@@ -701,7 +589,7 @@ targetSquareName { class } =
 
         _ ->
             [ Font.size 80
-            , Font.color white
+            , Font.color Colors.white
             , E.centerX
             , E.centerY
             , E.paddingEach { top = 20, bottom = 0, left = 0, right = 0 }
@@ -713,12 +601,12 @@ knightStartingSquareText { class } =
     case class of
         Tablet ->
             [ Font.size 24
-            , Font.color knightLightGold
+            , Font.color Colors.knightLightGold
             ]
 
         _ ->
             [ Font.size 32
-            , Font.color knightLightGold
+            , Font.color Colors.knightLightGold
             ]
 
 
@@ -727,12 +615,12 @@ targetSquareText { class } =
     case class of
         Tablet ->
             [ Font.size 24
-            , Font.color targetColor
+            , Font.color Colors.targetColor
             ]
 
         _ ->
             [ Font.size 32
-            , Font.color targetColor
+            , Font.color Colors.targetColor
             ]
 
 
@@ -741,18 +629,18 @@ queenSquareText { class } =
     case class of
         Tablet ->
             [ Font.size 24
-            , Font.color queenColor
+            , Font.color Colors.queenColor
             ]
 
         _ ->
             [ Font.size 32
-            , Font.color queenColor
+            , Font.color Colors.queenColor
             ]
 
 
 totalMovesText =
     [ E.centerX
-    , Font.color targetColor
+    , Font.color Colors.targetColor
     , Font.size 20
     , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
     ]
@@ -761,7 +649,7 @@ totalMovesText =
 wrongMovesText =
     [ E.centerX
     , E.centerY
-    , Font.color lightRed
+    , Font.color Colors.lightRed
     , Font.size 20
     , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
     ]
@@ -769,7 +657,7 @@ wrongMovesText =
 
 totalMovesNumber =
     [ Font.size 40
-    , Font.color white
+    , Font.color Colors.white
     , E.paddingEach { top = 40, left = 0, right = 0, bottom = 5 }
     , E.centerX
     ]
@@ -777,7 +665,7 @@ totalMovesNumber =
 
 wrongMovesNumber =
     [ Font.size 40
-    , Font.color white
+    , Font.color Colors.white
     , E.paddingEach { top = 40, left = 0, right = 0, bottom = 5 }
     , E.centerX
     ]
@@ -788,20 +676,20 @@ timer { class } =
     case class of
         BigDesktop ->
             [ Font.size 60
-            , Font.color white
+            , Font.color Colors.white
             , E.centerX
             ]
 
         _ ->
             [ Font.size 50
-            , Font.color white
+            , Font.color Colors.white
             , E.centerX
             ]
 
 
 congrats =
     [ Font.size 30
-    , Font.color navyBlue
+    , Font.color Colors.navyBlue
     , E.paddingEach { top = 0, bottom = 30, left = 0, right = 0 }
     ]
 

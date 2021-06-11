@@ -3,10 +3,10 @@ port module Main exposing (main)
 import Array exposing (Array)
 import Browser exposing (Document)
 import Browser.Events exposing (onResize)
+import Colors as Colors
 import Css exposing (..)
 import Element as E exposing (Color, Device, DeviceClass(..), Element, Orientation(..))
 import Element.Input as Input
-import Html exposing (Html)
 import Process
 import RankNFiles exposing (..)
 import Styles as St exposing (knightPosition)
@@ -92,8 +92,11 @@ type alias Model =
 initModel : Model
 initModel =
     let
+        device =
+            { class = BigDesktop, orientation = Landscape }
+
         knightStartingPosition =
-            St.knightPosition knightStartingCoords.file knightStartingCoords.rank
+            St.knightPosition knightStartingCoords.file knightStartingCoords.rank device
     in
     { knight = knightStartingCoords
     , knightOldPosition = knightStartingPosition
@@ -106,7 +109,7 @@ initModel =
     , timer = Nothing
     , validMoves = Array.fromList validSequence
     , wrongMoveSquare = Nothing
-    , device = { class = BigDesktop, orientation = Landscape }
+    , device = device
     }
 
 
@@ -149,8 +152,14 @@ update msg model =
             ( { model | wrongMoveSquare = Nothing }, Cmd.none )
 
         StartPressed ->
+            let
+                knightPosition =
+                    St.knightPosition H Eight model.device
+            in
             ( { model
                 | knightSelected = Just <| getLegalMoves H Eight
+                , knightOldPosition = knightPosition
+                , knightNewPosition = knightPosition
                 , gameState = Ready
               }
             , Cmd.none
@@ -189,13 +198,16 @@ update msg model =
 
                             _ ->
                                 Started
+
+                    knightNewPosition =
+                        St.knightPosition file rank model.device
                 in
                 case nextTarget of
                     NextTarget newTarget remainingValidMoves ->
                         ( { model
                             | knight = { rank = rank, file = file }
                             , knightOldPosition = model.knightNewPosition
-                            , knightNewPosition = St.knightPosition file rank
+                            , knightNewPosition = knightNewPosition
                             , knightSelected = Just <| getLegalMoves file rank
                             , currentTarget = newTarget
                             , totalMoves = model.totalMoves + 1
@@ -209,7 +221,7 @@ update msg model =
                         ( { model
                             | knight = { rank = rank, file = file }
                             , knightOldPosition = model.knightNewPosition
-                            , knightNewPosition = St.knightPosition file rank
+                            , knightNewPosition = knightNewPosition
                             , knightSelected = Just <| getLegalMoves file rank
                             , totalMoves = model.totalMoves + 1
                             , gameState = newGameState
@@ -222,7 +234,7 @@ update msg model =
                             | gameState = Finished
                             , knight = { rank = rank, file = file }
                             , knightOldPosition = model.knightNewPosition
-                            , knightNewPosition = St.knightPosition file rank
+                            , knightNewPosition = knightNewPosition
                             , knightSelected = Nothing
                           }
                         , Cmd.none
@@ -394,7 +406,7 @@ board model =
         knightStyles =
             case model.knightSelected of
                 Just _ ->
-                    St.selectedKnight
+                    St.selectedKnight model.device
 
                 Nothing ->
                     St.knight
@@ -432,7 +444,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
         knightStyles =
             case knightSelected of
                 Just _ ->
-                    St.selectedKnight
+                    St.selectedKnight device
 
                 Nothing ->
                     St.knight
@@ -547,7 +559,7 @@ startingBox file rank { knight, knightSelected, device } =
         knightStyles =
             case knightSelected of
                 Just _ ->
-                    St.selectedKnight
+                    St.selectedKnight device
 
                 Nothing ->
                     St.knight
@@ -689,10 +701,10 @@ getBoxColor : File -> Rank -> Color
 getBoxColor f r =
     let
         blackBg =
-            St.squareDarkColor
+            Colors.squareDarkColor
 
         whiteBg =
-            St.squareLight
+            Colors.squareLight
     in
     case ( f, modBy 2 <| rankToInt r ) of
         ( A, 0 ) ->
