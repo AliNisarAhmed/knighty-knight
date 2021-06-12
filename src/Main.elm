@@ -154,7 +154,7 @@ update msg model =
         StartPressed ->
             let
                 knightPosition =
-                    St.knightPosition H Eight model.device
+                    St.knightPosition knightStartingCoords.file knightStartingCoords.rank model.device
             in
             ( { model
                 | knightSelected = Just <| getLegalMoves H Eight
@@ -267,18 +267,21 @@ view model =
     let
         mainContentSection =
             case model.device.orientation of
+                Portrait ->
+                    E.row (St.mainContent model.device) <| mainContent model
+
                 Landscape ->
                     E.column (St.mainContentLandscape model.device) <| mainContent model
 
-                _ ->
-                    E.column (St.mainContent model.device) <| mainContent model
+        titleText =
+            "Knighty Knight"
     in
     case model.device.orientation of
         Portrait ->
-            { title = "Knighty Knight"
+            { title = titleText
             , body =
                 [ E.layout St.layout <|
-                    E.column (St.content model.device) <|
+                    E.column (St.contentPortrait model.device) <|
                         [ title model.device
                         , E.column (St.boardColumn model.device) <| board model
                         , mainContentSection
@@ -287,7 +290,7 @@ view model =
             }
 
         Landscape ->
-            { title = "Knighty Knight"
+            { title = titleText
             , body =
                 [ E.layout St.layout <|
                     E.row (St.content model.device) <|
@@ -305,11 +308,12 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
             (totalMoves - wrongMoves) * 100 // totalMoves
 
         titleElement =
-            -- case device.class of
-            --     Tablet ->
-            --         E.none
-            --     _ ->
-            title device
+            case device.orientation of
+                Portrait ->
+                    E.none
+
+                _ ->
+                    title device
     in
     case gameState of
         NotStarted ->
@@ -414,7 +418,7 @@ board model =
         knightImg =
             case model.gameState of
                 NotStarted ->
-                    E.none
+                    E.el [] E.none
 
                 _ ->
                     St.animatedEl (St.animation model.knightOldPosition model.knightNewPosition)
@@ -436,36 +440,14 @@ board model =
 
 
 box : File -> Rank -> Model -> Element Msg
-box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquare, device } =
+box file rank { knightSelected, currentTarget, gameState, wrongMoveSquare, device } =
     let
         boxColor =
             getBoxColor file rank
 
-        knightStyles =
-            case knightSelected of
-                Just _ ->
-                    St.selectedKnight device
+        squareStyles =
+            St.square boxColor device
 
-                Nothing ->
-                    St.knight
-
-        -- knightImg =
-        --     if file == knight.file && rank == knight.rank then
-        --         St.animatedEl St.animation
-        --             []
-        --             (E.image
-        --                 knightStyles
-        --                 { src = knightFilePath, description = "Knight" }
-        --             )
-        --     else
-        --         E.none
-        -- knightImg =
-        --     St.animatedEl St.animation
-        --         []
-        --         (E.image
-        --             knightStyles
-        --             { src = knightFilePath, description = "Knight" }
-        --         )
         move =
             case knightSelected of
                 Nothing ->
@@ -504,7 +486,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
 
         knightMoveIndicator =
             Input.button
-                (St.square boxColor device)
+                squareStyles
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare legalMoveCircle) [ queenImg, targetSquare ]
                 }
@@ -514,7 +496,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
 
         illegalMoveSquare =
             Input.button
-                (St.square boxColor device)
+                squareStyles
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare illegalMoveIndicator) [ queenImg, targetSquare ]
                 }
@@ -533,7 +515,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
                     knightMoveIndicator
 
         Illegal ->
-            E.row (St.square boxColor device) <| [ queenImg, targetSquare ]
+            E.row squareStyles <| [ queenImg, targetSquare ]
 
 
 startingBox : File -> Rank -> Model -> Element Msg

@@ -81,6 +81,19 @@ layout =
     ]
 
 
+contentPortrait : Device -> List (Attribute msg)
+contentPortrait { class, orientation } =
+    case class of
+        _ ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.fill
+            , E.height <| E.fill
+            , E.spaceEvenly
+            , E.padding 10
+            ]
+
+
 content : Device -> List (Attribute msg)
 content { class, orientation } =
     case class of
@@ -90,7 +103,6 @@ content { class, orientation } =
             , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 400)
             , E.height <| (E.px <| Cfg.squareWidth * 8)
             , E.spaceEvenly
-            , debug
             ]
 
         Desktop ->
@@ -98,7 +110,6 @@ content { class, orientation } =
             , E.centerY
             , E.width <| (E.fill |> E.maximum 1500 |> E.minimum 1200)
             , E.height <| (E.px <| Cfg.squareWidth * 8)
-            , debug
             ]
 
         _ ->
@@ -108,7 +119,6 @@ content { class, orientation } =
             , E.height <| E.fill
             , E.spaceEvenly
             , E.padding 10
-            , debug
             ]
 
 
