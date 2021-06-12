@@ -3,12 +3,13 @@ port module Main exposing (main)
 import Array exposing (Array)
 import Browser exposing (Document)
 import Browser.Events exposing (onResize)
+import Colors as Colors
 import Css exposing (..)
 import Element as E exposing (Color, Device, DeviceClass(..), Element, Orientation(..))
 import Element.Input as Input
 import Process
 import RankNFiles exposing (..)
-import Styles as St
+import Styles as St exposing (knightPosition)
 import Task
 import Time
 
@@ -34,8 +35,8 @@ type alias Knight =
     }
 
 
-knightStartingPosition : Knight
-knightStartingPosition =
+knightStartingCoords : Knight
+knightStartingCoords =
     { rank = Eight
     , file = H
     }
@@ -74,6 +75,8 @@ type alias Flags =
 
 type alias Model =
     { knight : Knight
+    , knightOldPosition : ( Float, Float )
+    , knightNewPosition : ( Float, Float )
     , knightSelected : Maybe LegalMoves
     , currentTarget : ( File, Rank )
     , totalMoves : Int
@@ -88,7 +91,16 @@ type alias Model =
 
 initModel : Model
 initModel =
-    { knight = knightStartingPosition
+    let
+        device =
+            { class = BigDesktop, orientation = Landscape }
+
+        knightStartingPosition =
+            St.knightPosition knightStartingCoords.file knightStartingCoords.rank device
+    in
+    { knight = knightStartingCoords
+    , knightOldPosition = knightStartingPosition
+    , knightNewPosition = knightStartingPosition
     , knightSelected = Nothing
     , currentTarget = ( F, Eight )
     , totalMoves = 0
@@ -97,7 +109,7 @@ initModel =
     , timer = Nothing
     , validMoves = Array.fromList validSequence
     , wrongMoveSquare = Nothing
-    , device = { class = BigDesktop, orientation = Landscape }
+    , device = device
     }
 
 
@@ -134,14 +146,30 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotNewWidth w h ->
-            ( { model | device = E.classifyDevice { width = w, height = h } }, Cmd.none )
+            let
+                knightNewPosition =
+                    St.knightPosition knightStartingCoords.file knightStartingCoords.rank model.device
+            in
+            ( { model
+                | device = E.classifyDevice { width = w, height = h }
+                , knightOldPosition = model.knightNewPosition
+                , knightNewPosition = knightNewPosition
+              }
+            , Cmd.none
+            )
 
         HideWrongMove _ ->
             ( { model | wrongMoveSquare = Nothing }, Cmd.none )
 
         StartPressed ->
+            let
+                knightPosition =
+                    St.knightPosition knightStartingCoords.file knightStartingCoords.rank model.device
+            in
             ( { model
                 | knightSelected = Just <| getLegalMoves H Eight
+                , knightOldPosition = knightPosition
+                , knightNewPosition = knightPosition
                 , gameState = Ready
               }
             , Cmd.none
@@ -180,11 +208,16 @@ update msg model =
 
                             _ ->
                                 Started
+
+                    knightNewPosition =
+                        St.knightPosition file rank model.device
                 in
                 case nextTarget of
                     NextTarget newTarget remainingValidMoves ->
                         ( { model
                             | knight = { rank = rank, file = file }
+                            , knightOldPosition = model.knightNewPosition
+                            , knightNewPosition = knightNewPosition
                             , knightSelected = Just <| getLegalMoves file rank
                             , currentTarget = newTarget
                             , totalMoves = model.totalMoves + 1
@@ -197,6 +230,8 @@ update msg model =
                     NotHit ->
                         ( { model
                             | knight = { rank = rank, file = file }
+                            , knightOldPosition = model.knightNewPosition
+                            , knightNewPosition = knightNewPosition
                             , knightSelected = Just <| getLegalMoves file rank
                             , totalMoves = model.totalMoves + 1
                             , gameState = newGameState
@@ -208,6 +243,8 @@ update msg model =
                         ( { model
                             | gameState = Finished
                             , knight = { rank = rank, file = file }
+                            , knightOldPosition = model.knightNewPosition
+                            , knightNewPosition = knightNewPosition
                             , knightSelected = Nothing
                           }
                         , Cmd.none
@@ -239,28 +276,31 @@ view : Model -> Document Msg
 view model =
     let
         mainContentSection =
-            case model.device.class of
-                Tablet ->
+            case model.device.orientation of
+                Portrait ->
                     E.row (St.mainContent model.device) <| mainContent model
 
-                _ ->
-                    E.column (St.mainContent model.device) <| mainContent model
+                Landscape ->
+                    E.column (St.mainContentLandscape model.device) <| mainContent model
+
+        titleText =
+            "Knighty Knight"
     in
-    case model.device.class of
-        Tablet ->
-            { title = "Knighty Knight"
+    case model.device.orientation of
+        Portrait ->
+            { title = titleText
             , body =
                 [ E.layout St.layout <|
-                    E.column (St.content model.device) <|
+                    E.column (St.contentPortrait model.device) <|
                         [ title model.device
-                        , E.column (St.boardColumn model.device) <| board model
                         , mainContentSection
+                        , E.column (St.boardColumn model.device) <| board model
                         ]
                 ]
             }
 
-        _ ->
-            { title = "Knighty Knight"
+        Landscape ->
+            { title = titleText
             , body =
                 [ E.layout St.layout <|
                     E.row (St.content model.device) <|
@@ -278,8 +318,8 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
             (totalMoves - wrongMoves) * 100 // totalMoves
 
         titleElement =
-            case device.class of
-                Tablet ->
+            case device.orientation of
+                Portrait ->
                     E.none
 
                 _ ->
@@ -316,39 +356,96 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
             ]
 
         _ ->
-            [ title device
-            , E.el (St.targetSquareName device) <| E.text <| squareToString currentTarget
-            , E.column (St.stats device) <|
-                [ displayTimer timer device
-                , E.el St.wrongMovesNumber <| E.text <| String.fromInt wrongMoves
-                , E.paragraph St.wrongMovesText <|
-                    [ E.text <| "Wrong attempted moves"
+            case device.class of
+                Phone ->
+                    [ E.column []
+                        [ E.el (St.targetSquareName device) <| E.text <| squareToString currentTarget
+                        , resetButton device
+                        ]
+                    , E.column (St.stats device) <|
+                        [ displayTimer timer device
+                        , E.el (St.wrongMovesNumber device) <| E.text <| String.fromInt wrongMoves
+                        , E.paragraph (St.wrongMovesText device) <|
+                            [ E.text <| "Wrong attempted moves"
+                            ]
+                        , E.el (St.totalMovesNumber device) <| E.text <| String.fromInt totalMoves
+                        , E.el (St.totalMovesText device) <|
+                            E.text <|
+                                "Total moves"
+                        ]
                     ]
-                , E.el St.totalMovesNumber <| E.text <| String.fromInt totalMoves
-                , E.el St.totalMovesText <|
-                    E.text <|
-                        "Total moves"
-                ]
-            , resetButton device
-            ]
+
+                _ ->
+                    [ titleElement
+                    , E.el (St.targetSquareName device) <| E.text <| squareToString currentTarget
+                    , E.column (St.stats device) <|
+                        [ displayTimer timer device
+                        , E.el (St.wrongMovesNumber device) <| E.text <| String.fromInt wrongMoves
+                        , E.paragraph (St.wrongMovesText device) <|
+                            [ E.text <| "Wrong attempted moves"
+                            ]
+                        , E.el (St.totalMovesNumber device) <| E.text <| String.fromInt totalMoves
+                        , E.el (St.totalMovesText device) <|
+                            E.text <|
+                                "Total moves"
+                        ]
+                    , resetButton device
+                    ]
 
 
 title : Device -> Element Msg
 title device =
-    E.el [ E.width E.fill ] <| E.el (St.heading device) <| E.text "A KNIGHT'S JOURNEY"
+    E.paragraph St.headingContainer <| [ E.el (St.heading device) <| E.text "A KNIGHT'S JOURNEY" ]
 
 
 explanation : Device -> Element Msg
 explanation device =
-    E.paragraph (St.text device) <|
-        [ E.text "Can you take the knight at "
-        , E.el (St.knightStartingSquareText device) <| E.text "h8"
-        , E.text " square, visiting all the squares one by one (left to right, top to bottom), all the way to the "
-        , E.el (St.targetSquareText device) <| E.text "a1"
-        , E.text " square, while avoiding all the squares attacked by the enemy "
-        , E.el (St.queenSquareText device) <| E.text "Queen"
-        , E.text " stationed at d5?"
-        ]
+    case device.class of
+        Phone ->
+            E.textColumn (St.textColumn device)
+                [ E.paragraph (St.text device)
+                    [ E.text "Take the knight at "
+                    , E.el (St.knightStartingSquareText device) <| E.text "h8"
+                    , E.text " square, visit each target, avoid the enemy Queen at "
+                    , E.el (St.queenSquareText device) <| E.text "d5"
+                    , E.text "and reach the end of the board at "
+                    , E.el (St.targetSquareText device) <| E.text "a1"
+                    ]
+
+                -- , E.paragraph (St.text device)
+                --     [ E.text "visit all the squares one by one (left to right, top to bottom), all the way to the "
+                --     , E.el (St.targetSquareText device) <| E.text "a1"
+                --     , E.text " square"
+                --     ]
+                -- , E.paragraph (St.text device)
+                --     [ E.text "while avoiding all the squares attacked by the enemy "
+                --     , E.text "Queen"
+                --     , E.text " stationed at "
+                --     , E.el (St.queenSquareText device) <| E.text "d5"
+                --     , E.text "?"
+                --     ]
+                ]
+
+        _ ->
+            E.textColumn (St.textColumn device)
+                [ E.paragraph (St.text device)
+                    [ E.text "Can you take the knight at "
+                    , E.el (St.knightStartingSquareText device) <| E.text "h8"
+                    , E.text " square"
+                    ]
+                , E.paragraph (St.text device)
+                    [ E.text "visit all the squares one by one (left to right, top to bottom), all the way to the "
+                    , E.el (St.targetSquareText device) <| E.text "a1"
+                    , E.text " square"
+                    ]
+                , E.paragraph (St.text device)
+                    [ E.text "while avoiding all the squares attacked by the enemy "
+                    , E.text "Queen"
+                    , E.text " stationed at "
+                    , E.el (St.queenSquareText device) <| E.text "d5"
+                    , E.text "?"
+                    ]
+                ]
 
 
 startButton : Device -> Element Msg
@@ -376,39 +473,47 @@ board model =
 
                 _ ->
                     box
+
+        knightStyles =
+            case model.knightSelected of
+                Just _ ->
+                    St.selectedKnight model.device
+
+                Nothing ->
+                    St.knight model.device
+
+        knightImg =
+            case model.gameState of
+                NotStarted ->
+                    E.el [] E.none
+
+                _ ->
+                    St.animatedEl (St.animation model.knightOldPosition model.knightNewPosition)
+                        []
+                        (E.image
+                            knightStyles
+                            { src = knightFilePath, description = "Knight" }
+                        )
     in
-    List.map
-        (\rank ->
-            E.row [] <|
-                rankLabel rank
-                    :: List.map (\file -> drawnBox file rank model) files
-        )
-        ranks
+    knightImg
+        :: List.map
+            (\rank ->
+                E.row (St.boardRow model.device) <|
+                    rankLabel rank
+                        :: List.map (\file -> drawnBox file rank model) files
+            )
+            ranks
         ++ fileLabelRow model.device files
 
 
 box : File -> Rank -> Model -> Element Msg
-box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquare, device } =
+box file rank { knightSelected, currentTarget, gameState, wrongMoveSquare, device } =
     let
         boxColor =
             getBoxColor file rank
 
-        knightStyles =
-            case knightSelected of
-                Just _ ->
-                    St.selectedKnight
-
-                Nothing ->
-                    St.knight
-
-        knightImg =
-            if file == knight.file && rank == knight.rank then
-                E.image
-                    knightStyles
-                    { src = knightFilePath, description = "Knight" }
-
-            else
-                E.none
+        squareStyles =
+            St.square boxColor device
 
         move =
             case knightSelected of
@@ -448,7 +553,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
 
         knightMoveIndicator =
             Input.button
-                (St.square boxColor device)
+                squareStyles
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare legalMoveCircle) [ queenImg, targetSquare ]
                 }
@@ -458,7 +563,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
 
         illegalMoveSquare =
             Input.button
-                (St.square boxColor device)
+                squareStyles
                 { onPress = moveHandler
                 , label = E.row (St.legalMoveSquare illegalMoveIndicator) [ queenImg, targetSquare ]
                 }
@@ -477,7 +582,7 @@ box file rank { knight, knightSelected, currentTarget, gameState, wrongMoveSquar
                     knightMoveIndicator
 
         Illegal ->
-            E.row (St.square boxColor device) <| [ knightImg, queenImg, targetSquare ]
+            E.row squareStyles <| [ queenImg, targetSquare ]
 
 
 startingBox : File -> Rank -> Model -> Element Msg
@@ -503,10 +608,10 @@ startingBox file rank { knight, knightSelected, device } =
         knightStyles =
             case knightSelected of
                 Just _ ->
-                    St.selectedKnight
+                    St.selectedKnight device
 
                 Nothing ->
-                    St.knight
+                    St.knight device
 
         knightImg =
             if file == knight.file && rank == knight.rank then
@@ -548,7 +653,7 @@ rankLabel rank =
 
 fileLabelRow : Device -> List File -> List (Element Msg)
 fileLabelRow device files =
-    [ E.row [] <| E.el St.blankRankLabel E.none :: List.map (fileLabel device) files ]
+    [ E.row (St.fileLabelRow device) <| E.el St.blankRankLabel E.none :: List.map (fileLabel device) files ]
 
 
 fileLabel : Device -> File -> Element Msg
@@ -645,10 +750,10 @@ getBoxColor : File -> Rank -> Color
 getBoxColor f r =
     let
         blackBg =
-            St.squareDarkColor
+            Colors.squareDarkColor
 
         whiteBg =
-            St.squareLight
+            Colors.squareLight
     in
     case ( f, modBy 2 <| rankToInt r ) of
         ( A, 0 ) ->

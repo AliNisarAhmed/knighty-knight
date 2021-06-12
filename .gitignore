@@ -2,6 +2,5 @@ elm-stuff/
 node_modules/
 build/elm.js
 build/index.html
-index.html
 ./elm.js
 elm.js
