@@ -27,9 +27,19 @@ tabletSquareWidth =
     round <| squareWidth / 1.5
 
 
+phoneSquareWidth : Int
+phoneSquareWidth =
+    48
+
+
 knightWidth : number
 knightWidth =
     50
+
+
+knightWidthPhone : number
+knightWidthPhone =
+    40
 
 
 selectedKnightWidth : number
@@ -45,6 +55,16 @@ queenWidth =
 desktopQueenWidth : number
 desktopQueenWidth =
     60
+
+
+tabletQueenWidth : number
+tabletQueenWidth =
+    55
+
+
+phoneQueenWidth : number
+phoneQueenWidth =
+    45
 
 
 legalMoveCircleWidth : number

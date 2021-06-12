@@ -37,14 +37,14 @@ animation ( oldX, oldY ) ( newX, newY ) =
 knightPosition : File -> Rank -> Device -> ( Float, Float )
 knightPosition file rank device =
     case device.class of
-        Desktop ->
-            ( fileToInt file * toFloat Cfg.desktopSquareWidth + toFloat Cfg.knightWidth / 2
-            , (toFloat (8 - rankToInt rank) * toFloat Cfg.desktopSquareWidth) + (toFloat <| getKnightSize device + 5)
-            )
-
         Tablet ->
             ( fileToInt file * toFloat Cfg.tabletSquareWidth + toFloat Cfg.knightWidth / 2
             , (toFloat (8 - rankToInt rank) * toFloat Cfg.tabletSquareWidth) + (toFloat <| getKnightSize device + 5)
+            )
+
+        Phone ->
+            ( fileToInt file * toFloat Cfg.phoneSquareWidth + toFloat Cfg.knightWidthPhone / 2
+            , (toFloat (8 - rankToInt rank) * toFloat Cfg.phoneSquareWidth) + (toFloat <| getKnightSize device + 5)
             )
 
         _ ->
@@ -173,13 +173,15 @@ mainContent { class } =
 
         Tablet ->
             [ E.paddingEach { top = 0, left = 10, right = 10, bottom = 0 }
-            , E.width <| (E.fill |> E.maximum 1000)
+            , E.width <| E.fillPortion 2
             , E.centerX
             , E.spaceEvenly
             ]
 
         _ ->
             [ E.paddingEach { top = 0, left = 10, right = 10, bottom = 0 }
+            , E.width E.fill
+            , E.spacingXY 10 0
             ]
 
 
@@ -196,14 +198,24 @@ stats { class } =
             , E.paddingXY 20 40
             ]
 
-        _ ->
-            [ Border.width 2
+        Phone ->
+            [ Border.width 1
             , Border.color Colors.navyBlue
             , E.centerY
             , E.centerX
             , B.color Colors.knightColor
             , Border.rounded 20
-            , E.paddingXY 10 20
+            , E.paddingXY 2 7
+            ]
+
+        _ ->
+            [ Border.width 1
+            , Border.color Colors.navyBlue
+            , E.centerY
+            , E.centerX
+            , B.color Colors.knightColor
+            , Border.rounded 20
+            , E.paddingXY 5 10
             ]
 
 
@@ -246,6 +258,17 @@ button { class } =
             , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = Colors.knightShadow }
             ]
 
+        Phone ->
+            [ E.paddingXY 30 20
+            , B.color <| E.rgb255 53 117 35
+            , E.centerX
+            , Border.rounded 5
+            , Font.size 15
+            , Font.letterSpacing 1.5
+            , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = Colors.knightShadow }
+            , E.alignRight
+            ]
+
         _ ->
             [ E.paddingXY 60 20
             , B.color <| E.rgb255 53 117 35
@@ -266,7 +289,6 @@ startButton device =
         ++ [ Font.color <| E.rgba 1 1 1 0.8
            , B.color <| E.rgb255 53 117 35
            , E.alignBottom
-           , E.centerX
            ]
 
 
@@ -295,6 +317,9 @@ heading { class } =
                 BigDesktop ->
                     60
 
+                Phone ->
+                    32
+
                 _ ->
                     40
     in
@@ -305,6 +330,43 @@ heading { class } =
     ]
 
 
+textColumn : Device -> List (Attribute msg)
+textColumn { class } =
+    case class of
+        Tablet ->
+            [ E.spacing 30
+            , E.padding 15
+            , B.color (E.rgba255 0 0 128 0.8)
+            , E.centerY
+            , E.centerX
+            , Border.rounded 20
+            , Font.size 15
+            , E.width <| (E.fill |> E.maximum 350)
+            ]
+
+        Phone ->
+            [ E.spacing 30
+            , E.padding 15
+            , B.color (E.rgba255 0 0 128 0.8)
+            , E.centerY
+            , E.centerX
+            , Border.rounded 20
+            , Font.size 15
+            , E.width <| (E.fill |> E.maximum 250)
+            ]
+
+        _ ->
+            [ E.spacing 40
+            , E.padding 20
+            , B.color (E.rgba255 0 0 128 0.8)
+            , E.centerY
+            , E.centerX
+            , Border.rounded 20
+            , Font.size 18
+            , E.width <| (E.fill |> E.maximum 350)
+            ]
+
+
 text : Device -> List (Attribute msg)
 text { class } =
     case class of
@@ -313,25 +375,35 @@ text { class } =
             , E.width <| (E.fill |> E.maximum 500)
             , E.centerY
             , E.centerX
-            , E.paddingXY 0 20
+            , E.paddingXY 0 0
             , Font.justify
+
+            -- , Font.size 18
             , Font.color (E.rgba 1 1 1 0.8)
-            , B.color (E.rgba255 0 0 128 0.8)
-            , E.paddingEach { top = 40, left = 30, bottom = 40, right = 30 }
-            , Border.rounded 20
+            ]
+
+        Desktop ->
+            [ E.spacing 10
+            , E.width <| (E.fill |> E.maximum 500)
+            , E.centerY
+            , E.centerX
+            , E.paddingXY 0 0
+            , Font.justify
+
+            -- , Font.size 18
+            , Font.color (E.rgba 1 1 1 0.8)
             ]
 
         Tablet ->
             [ E.spacing 10
-            , E.width (E.fill |> E.maximum 600)
+            , E.width <| (E.fill |> E.maximum 500)
             , E.centerY
             , E.centerX
+            , E.paddingXY 0 0
             , Font.justify
-            , Font.size 14
+
+            -- , Font.size 18
             , Font.color (E.rgba 1 1 1 0.8)
-            , B.color (E.rgba255 0 0 128 0.8)
-            , E.paddingEach { top = 10, left = 10, bottom = 10, right = 10 }
-            , Border.rounded 5
             ]
 
         _ ->
@@ -341,11 +413,9 @@ text { class } =
             , E.centerX
             , E.paddingXY 0 0
             , Font.justify
-            , Font.size 18
+
+            -- , Font.size 18
             , Font.color (E.rgba 1 1 1 0.8)
-            , B.color (E.rgba255 0 0 128 0.8)
-            , E.paddingEach { top = 40, left = 30, bottom = 40, right = 30 }
-            , Border.rounded 20
             ]
 
 
@@ -365,8 +435,18 @@ boardColumn { class } =
 
         _ ->
             [ E.centerX
-            , E.paddingEach { top = 20, left = 0, right = 20, bottom = 0 }
+            , E.width E.fill
             ]
+
+
+boardRow : Device -> List (Attribute msg)
+boardRow { class } =
+    case class of
+        Phone ->
+            [ E.centerX ]
+
+        _ ->
+            []
 
 
 square : Color -> Device -> List (Attribute msg)
@@ -400,8 +480,8 @@ square color { class } =
             ]
 
         _ ->
-            [ E.width <| E.px <| round <| Cfg.squareWidth / 1.25
-            , E.height <| E.px <| round <| Cfg.squareWidth / 1.25
+            [ E.width <| E.px <| Cfg.phoneSquareWidth
+            , E.height <| E.px <| Cfg.phoneSquareWidth
             , B.color color
             , E.centerY
             , E.centerX
@@ -432,6 +512,16 @@ targetSquare { class } =
             , B.color Colors.targetColor
             ]
 
+        Phone ->
+            [ E.width <| E.px Cfg.phoneSquareWidth
+            , E.height <| E.px Cfg.phoneSquareWidth
+            , B.color Colors.targetColor
+            , E.centerY
+            , E.centerX
+            , E.focused []
+            , B.color Colors.targetColor
+            ]
+
         _ ->
             [ E.width <| E.px Cfg.tabletSquareWidth
             , E.height <| E.px Cfg.tabletSquareWidth
@@ -443,13 +533,22 @@ targetSquare { class } =
             ]
 
 
-knight : List (Attribute msg)
-knight =
-    [ E.centerX
-    , E.centerY
-    , E.width <| E.px Cfg.knightWidth
-    , E.height <| E.px Cfg.knightWidth
-    ]
+knight : Device -> List (Attribute msg)
+knight { class } =
+    case class of
+        Phone ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.px Cfg.knightWidthPhone
+            , E.height <| E.px Cfg.knightWidthPhone
+            ]
+
+        _ ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.px Cfg.knightWidth
+            , E.height <| E.px Cfg.knightWidth
+            ]
 
 
 getKnightSize : Device -> Int
@@ -458,26 +557,47 @@ getKnightSize { class } =
         Tablet ->
             round <| Cfg.selectedKnightWidth / 1.25
 
+        Phone ->
+            Cfg.knightWidthPhone
+
         _ ->
             Cfg.selectedKnightWidth
 
 
 selectedKnight : Device -> List (Attribute msg)
 selectedKnight device =
-    [ E.centerX
-    , E.centerY
-    , E.width <| E.px <| getKnightSize device
-    , E.height <| E.px <| getKnightSize device
-    , E.pointer
-    , Border.shadow
-        { offset = ( 0, 0 )
-        , size = 0.1
-        , blur = 40
-        , color = Colors.knightShadow
-        }
-    , B.color Colors.legalMoveCircleColorLight
-    , Border.rounded 20
-    ]
+    case device.class of
+        Phone ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.px <| getKnightSize device
+            , E.height <| E.px <| getKnightSize device
+            , E.pointer
+            , Border.shadow
+                { offset = ( 0, 0 )
+                , size = 0.1
+                , blur = 40
+                , color = Colors.knightShadow
+                }
+            , B.color Colors.legalMoveCircleColorLight
+            , Border.rounded 20
+            ]
+
+        _ ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.px <| getKnightSize device
+            , E.height <| E.px <| getKnightSize device
+            , E.pointer
+            , Border.shadow
+                { offset = ( 0, 0 )
+                , size = 0.1
+                , blur = 40
+                , color = Colors.knightShadow
+                }
+            , B.color Colors.legalMoveCircleColorLight
+            , Border.rounded 20
+            ]
 
 
 queen : Device -> List (Attribute msg)
@@ -490,11 +610,25 @@ queen { class } =
             , E.height <| E.px Cfg.queenWidth
             ]
 
-        _ ->
+        Desktop ->
             [ E.centerX
             , E.centerY
             , E.width <| E.px Cfg.desktopQueenWidth
             , E.height <| E.px Cfg.desktopQueenWidth
+            ]
+
+        Phone ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.px Cfg.phoneQueenWidth
+            , E.height <| E.px Cfg.phoneQueenWidth
+            ]
+
+        _ ->
+            [ E.centerX
+            , E.centerY
+            , E.width <| E.px Cfg.tabletQueenWidth
+            , E.height <| E.px Cfg.tabletQueenWidth
             ]
 
 
@@ -558,6 +692,16 @@ blankRankLabel =
     ]
 
 
+fileLabelRow : Device -> List (Attribute msg)
+fileLabelRow { class } =
+    case class of
+        Phone ->
+            [ E.centerX ]
+
+        _ ->
+            []
+
+
 fileLabelText : Device -> List (Attribute msg)
 fileLabelText { class } =
     case class of
@@ -582,7 +726,7 @@ fileLabelText { class } =
             , E.centerY
             , E.centerX
             , E.paddingXY 0 7
-            , E.width (E.px Cfg.tabletSquareWidth)
+            , E.width (E.px Cfg.phoneSquareWidth)
             ]
 
 
@@ -597,6 +741,14 @@ targetSquareName { class } =
             , E.paddingEach { top = 0, bottom = 20, left = 0, right = 0 }
             ]
 
+        Phone ->
+            [ Font.size 50
+            , Font.color Colors.white
+            , E.centerX
+            , E.centerY
+            , E.paddingEach { top = 20, bottom = 0, left = 0, right = 0 }
+            ]
+
         _ ->
             [ Font.size 80
             , Font.color Colors.white
@@ -609,6 +761,11 @@ targetSquareName { class } =
 knightStartingSquareText : Device -> List (Attribute msg)
 knightStartingSquareText { class } =
     case class of
+        Phone ->
+            [ Font.size 18
+            , Font.color Colors.knightLightGold
+            ]
+
         Tablet ->
             [ Font.size 24
             , Font.color Colors.knightLightGold
@@ -623,6 +780,11 @@ knightStartingSquareText { class } =
 targetSquareText : Device -> List (Attribute msg)
 targetSquareText { class } =
     case class of
+        Phone ->
+            [ Font.size 18
+            , Font.color Colors.targetColor
+            ]
+
         Tablet ->
             [ Font.size 24
             , Font.color Colors.targetColor
@@ -637,6 +799,11 @@ targetSquareText { class } =
 queenSquareText : Device -> List (Attribute msg)
 queenSquareText { class } =
     case class of
+        Phone ->
+            [ Font.size 18
+            , Font.color Colors.queenColor
+            ]
+
         Tablet ->
             [ Font.size 24
             , Font.color Colors.queenColor
@@ -648,37 +815,80 @@ queenSquareText { class } =
             ]
 
 
-totalMovesText =
-    [ E.centerX
-    , Font.color Colors.targetColor
-    , Font.size 20
-    , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
-    ]
+wrongMovesNumber : Device -> List (Attribute msg)
+wrongMovesNumber { class } =
+    case class of
+        Phone ->
+            [ Font.size 30
+            , Font.color Colors.white
+            , E.paddingEach { top = 20, left = 0, right = 0, bottom = 5 }
+            , E.centerX
+            ]
+
+        _ ->
+            [ Font.size 40
+            , Font.color Colors.white
+            , E.paddingEach { top = 40, left = 0, right = 0, bottom = 5 }
+            , E.centerX
+            ]
 
 
-wrongMovesText =
-    [ E.centerX
-    , E.centerY
-    , Font.color Colors.lightRed
-    , Font.size 20
-    , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
-    ]
+wrongMovesText : Device -> List (Attribute msg)
+wrongMovesText { class } =
+    case class of
+        Phone ->
+            [ E.centerX
+            , E.centerY
+            , Font.color Colors.lightRed
+            , Font.size 15
+
+            -- , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
+            ]
+
+        _ ->
+            [ E.centerX
+            , E.centerY
+            , Font.color Colors.lightRed
+            , Font.size 20
+
+            -- , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
+            ]
 
 
-totalMovesNumber =
-    [ Font.size 40
-    , Font.color Colors.white
-    , E.paddingEach { top = 40, left = 0, right = 0, bottom = 5 }
-    , E.centerX
-    ]
+totalMovesNumber : Device -> List (Attribute msg)
+totalMovesNumber { class } =
+    case class of
+        Phone ->
+            [ Font.size 30
+            , Font.color Colors.white
+            , E.paddingEach { top = 10, left = 0, right = 0, bottom = 5 }
+            , E.centerX
+            ]
+
+        _ ->
+            [ Font.size 40
+            , Font.color Colors.white
+            , E.paddingEach { top = 40, left = 0, right = 0, bottom = 5 }
+            , E.centerX
+            ]
 
 
-wrongMovesNumber =
-    [ Font.size 40
-    , Font.color Colors.white
-    , E.paddingEach { top = 40, left = 0, right = 0, bottom = 5 }
-    , E.centerX
-    ]
+totalMovesText : Device -> List (Attribute msg)
+totalMovesText { class } =
+    case class of
+        Phone ->
+            [ E.centerX
+            , Font.color Colors.targetColor
+            , Font.size 20
+            , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
+            ]
+
+        _ ->
+            [ E.centerX
+            , Font.color Colors.targetColor
+            , Font.size 20
+            , E.paddingEach { top = 5, left = 0, right = 0, bottom = 5 }
+            ]
 
 
 timer : Device -> List (Attribute msg)
@@ -686,6 +896,12 @@ timer { class } =
     case class of
         BigDesktop ->
             [ Font.size 60
+            , Font.color Colors.white
+            , E.centerX
+            ]
+
+        Phone ->
+            [ Font.size 30
             , Font.color Colors.white
             , E.centerX
             ]

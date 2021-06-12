@@ -146,7 +146,17 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotNewWidth w h ->
-            ( { model | device = E.classifyDevice { width = w, height = h } }, Cmd.none )
+            let
+                knightNewPosition =
+                    St.knightPosition knightStartingCoords.file knightStartingCoords.rank model.device
+            in
+            ( { model
+                | device = E.classifyDevice { width = w, height = h }
+                , knightOldPosition = model.knightNewPosition
+                , knightNewPosition = knightNewPosition
+              }
+            , Cmd.none
+            )
 
         HideWrongMove _ ->
             ( { model | wrongMoveSquare = Nothing }, Cmd.none )
@@ -283,8 +293,8 @@ view model =
                 [ E.layout St.layout <|
                     E.column (St.contentPortrait model.device) <|
                         [ title model.device
-                        , E.column (St.boardColumn model.device) <| board model
                         , mainContentSection
+                        , E.column (St.boardColumn model.device) <| board model
                         ]
                 ]
             }
@@ -346,21 +356,41 @@ mainContent { currentTarget, totalMoves, wrongMoves, timer, gameState, device } 
             ]
 
         _ ->
-            [ title device
-            , E.el (St.targetSquareName device) <| E.text <| squareToString currentTarget
-            , E.column (St.stats device) <|
-                [ displayTimer timer device
-                , E.el St.wrongMovesNumber <| E.text <| String.fromInt wrongMoves
-                , E.paragraph St.wrongMovesText <|
-                    [ E.text <| "Wrong attempted moves"
+            case device.class of
+                Phone ->
+                    [ E.column []
+                        [ E.el (St.targetSquareName device) <| E.text <| squareToString currentTarget
+                        , resetButton device
+                        ]
+                    , E.column (St.stats device) <|
+                        [ displayTimer timer device
+                        , E.el (St.wrongMovesNumber device) <| E.text <| String.fromInt wrongMoves
+                        , E.paragraph (St.wrongMovesText device) <|
+                            [ E.text <| "Wrong attempted moves"
+                            ]
+                        , E.el (St.totalMovesNumber device) <| E.text <| String.fromInt totalMoves
+                        , E.el (St.totalMovesText device) <|
+                            E.text <|
+                                "Total moves"
+                        ]
                     ]
-                , E.el St.totalMovesNumber <| E.text <| String.fromInt totalMoves
-                , E.el St.totalMovesText <|
-                    E.text <|
-                        "Total moves"
-                ]
-            , resetButton device
-            ]
+
+                _ ->
+                    [ titleElement
+                    , E.el (St.targetSquareName device) <| E.text <| squareToString currentTarget
+                    , E.column (St.stats device) <|
+                        [ displayTimer timer device
+                        , E.el (St.wrongMovesNumber device) <| E.text <| String.fromInt wrongMoves
+                        , E.paragraph (St.wrongMovesText device) <|
+                            [ E.text <| "Wrong attempted moves"
+                            ]
+                        , E.el (St.totalMovesNumber device) <| E.text <| String.fromInt totalMoves
+                        , E.el (St.totalMovesText device) <|
+                            E.text <|
+                                "Total moves"
+                        ]
+                    , resetButton device
+                    ]
 
 
 title : Device -> Element Msg
@@ -370,15 +400,52 @@ title device =
 
 explanation : Device -> Element Msg
 explanation device =
-    E.paragraph (St.text device) <|
-        [ E.text "Can you take the knight at "
-        , E.el (St.knightStartingSquareText device) <| E.text "h8"
-        , E.text " square, visiting all the squares one by one (left to right, top to bottom), all the way to the "
-        , E.el (St.targetSquareText device) <| E.text "a1"
-        , E.text " square, while avoiding all the squares attacked by the enemy "
-        , E.el (St.queenSquareText device) <| E.text "Queen"
-        , E.text " stationed at d5?"
-        ]
+    case device.class of
+        Phone ->
+            E.textColumn (St.textColumn device)
+                [ E.paragraph (St.text device)
+                    [ E.text "Take the knight at "
+                    , E.el (St.knightStartingSquareText device) <| E.text "h8"
+                    , E.text " square, visit each target, avoid the enemy Queen at "
+                    , E.el (St.queenSquareText device) <| E.text "d5"
+                    , E.text "and reach the end of the board at "
+                    , E.el (St.targetSquareText device) <| E.text "a1"
+                    ]
+
+                -- , E.paragraph (St.text device)
+                --     [ E.text "visit all the squares one by one (left to right, top to bottom), all the way to the "
+                --     , E.el (St.targetSquareText device) <| E.text "a1"
+                --     , E.text " square"
+                --     ]
+                -- , E.paragraph (St.text device)
+                --     [ E.text "while avoiding all the squares attacked by the enemy "
+                --     , E.text "Queen"
+                --     , E.text " stationed at "
+                --     , E.el (St.queenSquareText device) <| E.text "d5"
+                --     , E.text "?"
+                --     ]
+                ]
+
+        _ ->
+            E.textColumn (St.textColumn device)
+                [ E.paragraph (St.text device)
+                    [ E.text "Can you take the knight at "
+                    , E.el (St.knightStartingSquareText device) <| E.text "h8"
+                    , E.text " square"
+                    ]
+                , E.paragraph (St.text device)
+                    [ E.text "visit all the squares one by one (left to right, top to bottom), all the way to the "
+                    , E.el (St.targetSquareText device) <| E.text "a1"
+                    , E.text " square"
+                    ]
+                , E.paragraph (St.text device)
+                    [ E.text "while avoiding all the squares attacked by the enemy "
+                    , E.text "Queen"
+                    , E.text " stationed at "
+                    , E.el (St.queenSquareText device) <| E.text "d5"
+                    , E.text "?"
+                    ]
+                ]
 
 
 startButton : Device -> Element Msg
@@ -413,7 +480,7 @@ board model =
                     St.selectedKnight model.device
 
                 Nothing ->
-                    St.knight
+                    St.knight model.device
 
         knightImg =
             case model.gameState of
@@ -431,7 +498,7 @@ board model =
     knightImg
         :: List.map
             (\rank ->
-                E.row [] <|
+                E.row (St.boardRow model.device) <|
                     rankLabel rank
                         :: List.map (\file -> drawnBox file rank model) files
             )
@@ -544,7 +611,7 @@ startingBox file rank { knight, knightSelected, device } =
                     St.selectedKnight device
 
                 Nothing ->
-                    St.knight
+                    St.knight device
 
         knightImg =
             if file == knight.file && rank == knight.rank then
@@ -586,7 +653,7 @@ rankLabel rank =
 
 fileLabelRow : Device -> List File -> List (Element Msg)
 fileLabelRow device files =
-    [ E.row [] <| E.el St.blankRankLabel E.none :: List.map (fileLabel device) files ]
+    [ E.row (St.fileLabelRow device) <| E.el St.blankRankLabel E.none :: List.map (fileLabel device) files ]
 
 
 fileLabel : Device -> File -> Element Msg
