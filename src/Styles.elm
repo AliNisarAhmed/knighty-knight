@@ -28,28 +28,50 @@ animatedUi =
 animation : ( Float, Float ) -> ( Float, Float ) -> Animation
 animation ( oldX, oldY ) ( newX, newY ) =
     Animation.steps
-        { startAt = [ P.x oldX, P.y oldY, P.property "z-index" "2" ]
+        { startAt = [ P.x oldX, P.y oldY ]
         , options = [ Animation.count 1 ]
         }
-        [ Animation.step 170 <| [ P.x newX, P.y newY, P.property "z-index" "2" ] ]
+        [ Animation.step 170 <| [ P.x newX, P.y newY ] ]
 
 
 knightPosition : File -> Rank -> Device -> ( Float, Float )
 knightPosition file rank device =
+    let
+        fileNumber =
+            fileToInt file
+
+        rankNumber =
+            toFloat <| (8 - rankToInt rank)
+
+        knightSize =
+            (toFloat <| getKnightSize device) / 2
+
+        vOffset =
+            case device.class of
+                BigDesktop ->
+                    14
+
+                _ ->
+                    5
+
+        squareSize =
+            case device.class of
+                Tablet ->
+                    toFloat Cfg.tabletSquareWidth
+
+                Phone ->
+                    toFloat Cfg.phoneSquareWidth
+
+                Desktop ->
+                    toFloat Cfg.desktopSquareWidth
+
+                _ ->
+                    toFloat Cfg.squareWidth
+    in
     case device.class of
-        Tablet ->
-            ( fileToInt file * toFloat Cfg.tabletSquareWidth + toFloat Cfg.knightWidth / 2
-            , (toFloat (8 - rankToInt rank) * toFloat Cfg.tabletSquareWidth) + (toFloat <| getKnightSize device + 5)
-            )
-
-        Phone ->
-            ( fileToInt file * toFloat Cfg.phoneSquareWidth + toFloat Cfg.knightWidthPhone / 2
-            , (toFloat (8 - rankToInt rank) * toFloat Cfg.phoneSquareWidth) + (toFloat <| getKnightSize device + 5)
-            )
-
         _ ->
-            ( fileToInt file * toFloat Cfg.desktopSquareWidth + toFloat Cfg.knightWidth / 2
-            , (toFloat (8 - rankToInt rank) * toFloat Cfg.desktopSquareWidth) + (toFloat <| getKnightSize device + 5)
+            ( fileNumber * squareSize + knightSize
+            , (rankNumber * squareSize) + vOffset
             )
 
 
@@ -140,18 +162,6 @@ mainContentLandscape { class } =
             , E.height (E.px <| 8 * Cfg.desktopSquareWidth)
             , E.paddingEach { top = 0, left = 20, right = 20, bottom = 0 }
             ]
-
-
-
--- Tablet ->
---     [ E.paddingEach { top = 0, left = 10, right = 10, bottom = 0 }
---     , E.width <| (E.fill |> E.maximum 1000)
---     , E.centerX
---     , E.spaceEvenly
---     ]
--- _ ->
---     [ E.paddingEach { top = 0, left = 10, right = 10, bottom = 0 }
---     ]
 
 
 mainContent : Device -> List (Attribute msg)

@@ -411,19 +411,6 @@ explanation device =
                     , E.text "and reach the end of the board at "
                     , E.el (St.targetSquareText device) <| E.text "a1"
                     ]
-
-                -- , E.paragraph (St.text device)
-                --     [ E.text "visit all the squares one by one (left to right, top to bottom), all the way to the "
-                --     , E.el (St.targetSquareText device) <| E.text "a1"
-                --     , E.text " square"
-                --     ]
-                -- , E.paragraph (St.text device)
-                --     [ E.text "while avoiding all the squares attacked by the enemy "
-                --     , E.text "Queen"
-                --     , E.text " stationed at "
-                --     , E.el (St.queenSquareText device) <| E.text "d5"
-                --     , E.text "?"
-                --     ]
                 ]
 
         _ ->
@@ -495,15 +482,17 @@ board model =
                             { src = knightFilePath, description = "Knight" }
                         )
     in
-    knightImg
-        :: List.map
+    [ E.column [ E.inFront knightImg ] <|
+        (List.map
             (\rank ->
                 E.row (St.boardRow model.device) <|
                     rankLabel rank
                         :: List.map (\file -> drawnBox file rank model) files
             )
             ranks
-        ++ fileLabelRow model.device files
+            ++ fileLabelRow model.device files
+        )
+    ]
 
 
 box : File -> Rank -> Model -> Element Msg
