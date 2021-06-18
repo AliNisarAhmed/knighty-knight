@@ -269,7 +269,6 @@ button { class } =
         Phone ->
             [ E.paddingXY 30 20
             , B.color <| E.rgb255 53 117 35
-            , E.centerX
             , Border.rounded 5
             , Font.size 15
             , Font.letterSpacing 1.5
@@ -285,9 +284,6 @@ button { class } =
             , Font.size 18
             , Font.letterSpacing 1.5
             , Border.shadow { offset = ( 0, 1 ), size = 1, blur = 2, color = Colors.knightShadow }
-
-            -- , E.height E.fill
-            , E.alignRight
             ]
 
 
@@ -443,7 +439,6 @@ boardColumn { class } =
 
         _ ->
             [ E.centerX
-            , E.width E.fill
             ]
 
 
